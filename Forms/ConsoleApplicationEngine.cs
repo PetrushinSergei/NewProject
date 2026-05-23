@@ -511,8 +511,8 @@ internal sealed class ConsoleApplicationEngine
         var raipot = new StringBuilder();
         tokRows.Clear();
 
-        net2.AppendLine("          Результаты расчета по узлам");
-        net2.AppendLine("    N        V         dV         P         Q        Pg       Qb");
+        net2.AppendLine("               Результаты расчета по узлам");
+        net2.AppendLine("    N        V      Delta       P_н       Q_н       P_г       Q_г");
 
         double sp = 0, sq = 0, spg = 0, sqb = 0, dPsum = 0;
 
@@ -530,16 +530,27 @@ internal sealed class ConsoleApplicationEngine
             double qb = -mv * b[i];
             sp += p[i]; sq += q[i]; spg += pg; sqb += qb;
             mv = Math.Sqrt(mv);
+            double pLoad = Math.Abs(p0[i]);
+            double qLoad = Math.Abs(q0[i]);
+            double pGen = -p[i];
+            double qGen = -q[i];
 
-            net2.AppendLine($"{nn[i],5}{F2(mv),10}{F2(dv),10}{F2(-p[i]),10}{F2(-q[i]),10}{F2(pg),10}{F2(qb),10}");
+            // Для базового узла приводим генерацию к балансовым знакам, как в Растр Win.
+            if (i == 0)
+            {
+                pGen = p[i] + pLoad;
+                qGen = -(q[i] - qLoad);
+            }
+
+            net2.AppendLine($"{nn[i],5}{F2(mv),10}{dv,10:F2}{pLoad,10:F2}{qLoad,10:F2}{pGen,10:F2}{qGen,10:F2}");
         }
 
         net2.AppendLine("---------------------------------------------------");
         net2.AppendLine($"Баланс пассивных элементов {F2(sp),10}{F2(sq),10}{F2(spg),10}{F2(sqb),10}");
         net2.AppendLine("                         + потребление, - генерация ");
         net2.AppendLine();
-        net2.AppendLine("                   Результаты расчета по ветвям");
-        net2.AppendLine("   N1   N2       P12       Q12       P21       Q21       dP      Iнач      Iкон      Iдоп    Загр,%");
+        net2.AppendLine("                           Результаты расчета по ветвям");
+        net2.AppendLine(" N_нач N_кон      R       X       B    P_нач    Q_нач    P_кон    Q_кон    I_нач    I_кон      dP      Iдоп    Загр,%");
 
         for (int j = 1; j <= m; j++)
         {
@@ -574,7 +585,18 @@ internal sealed class ConsoleApplicationEngine
 
             tokRows.Add(new TokRow { Start = i1, End = i2, Ia = RoundFromFlex(i1a, 4), Ir = RoundFromFlex(i1r, 4), R = RoundFromFlex(Math.Abs(r[j]), 3) });
 
-            net2.AppendLine($"{nn[i1],5}{nn[i2],5}{F2(-p12),10}{F2(-q12),10}{F2(p21),10}{F2(q21),10}{F2(dpl),10}{F2(iStartAmperes),10}{F2(iEndAmperes),10}{F2(permissibleCurrentByBranch[j]),10}{F2(loadingPercent),10}");
+            double pStart = Math.Round(-p12, 0, MidpointRounding.AwayFromZero);
+            double qStart = Math.Round(-q12, 0, MidpointRounding.AwayFromZero);
+            double pEnd = Math.Round(-p21, 0, MidpointRounding.AwayFromZero);
+            double qEnd = Math.Round(-q21, 0, MidpointRounding.AwayFromZero);
+            double iStartRounded = Math.Round(iStartAmperes, 0, MidpointRounding.AwayFromZero);
+            double iEndRounded = Math.Round(iEndAmperes, 0, MidpointRounding.AwayFromZero);
+
+            net2.AppendLine(
+                $"{nn[i1],6}{nn[i2],6}" +
+                $"{r[j],8:F2}{x[j],8:F2}{by[j],8:F2}" +
+                $"{pStart,9:F0}{qStart,9:F0}{pEnd,9:F0}{qEnd,9:F0}{iStartRounded,9:F0}{iEndRounded,9:F0}" +
+                $"{dpl,10:F2}{permissibleCurrentByBranch[j],10:F2}{loadingPercent,10:F2}");
 
             int rk = nn[i1] / kkk; while (rk > 9) rk /= kk;
             int r2 = nn[i2] / kkk; while (r2 > 9) r2 /= kk;
