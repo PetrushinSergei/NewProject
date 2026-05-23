@@ -48,6 +48,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Graphics\GraphicBaseNode.cs" />
+    <Compile Include="Graphics\GraphicBranch.cs" />
+    <Compile Include="Graphics\GraphicNode.cs" />
+    <Compile Include="Graphics\GraphicShunt.cs" />
+    <Compile Include="Graphics\NodeGraphicsHelper.cs" />
     <Compile Include="Models\BaseNode.cs" />
     <Compile Include="Models\CalculationOptions.cs" />
     <Compile Include="Models\AppRuntimeSettings.cs" />
@@ -81,11 +86,6 @@
     <Compile Include="Forms\Form1.Designer.cs">
       <DependentUpon>Form1.cs</DependentUpon>
     </Compile>
-    <Compile Include="GraphicBaseNode.cs" />
-    <Compile Include="GraphicBranch.cs" />
-    <Compile Include="GraphicNode.cs" />
-    <Compile Include="NodeGraphicsHelper.cs" />
-    <Compile Include="GraphicShunt.cs" />
     <Compile Include="Models\Node.cs" />
     <Compile Include="Forms\NodeForm.cs">
       <SubType>Form</SubType>
