@@ -631,7 +631,7 @@ internal sealed class ConsoleApplicationEngine
             int r2 = nn[i2] / kkk;
             while (r2 > 9) r2 /= kk;
 
-            if (rk == r2)
+            for (int j = 1; j <= m; j++)
             {
                 areaBranchCount[rk]++;
                 areaLossSum[rk] += dpLoss;
