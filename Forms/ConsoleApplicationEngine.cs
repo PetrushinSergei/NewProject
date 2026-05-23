@@ -524,8 +524,8 @@ internal sealed class ConsoleApplicationEngine
         var report = new StringBuilder();
         tokRows.Clear();
 
-        report.AppendLine("                             Результаты расчета по узлам");
-        report.AppendLine("    N     ТИП    U_ном     Vрасч    Delta       P_н       Q_н       P_г       Q_г      V_зд");
+        net2.AppendLine("               Результаты расчета по узлам");
+        net2.AppendLine("    N        V      Delta       P_н       Q_н       P_г       Q_г");
 
         double sumP = 0.0;
         double sumQ = 0.0;
@@ -541,40 +541,33 @@ internal sealed class ConsoleApplicationEngine
 
         for (int i = 0; i <= n; i++)
         {
-            double vSquared = va[i] * va[i] + vr[i] * vr[i];
-            double delta = Math.Atan2(vr[i], va[i]) * 57.295779515;
-            double pgPassive = vSquared * g[i];
-            double qbPassive = -vSquared * b[i];
-            sumP += p[i];
-            sumQ += q[i];
-            sumPg += pgPassive;
-            sumQb += qbPassive;
+            double mv = va[i] * va[i] + vr[i] * vr[i];
+            double dv = Math.Atan2(vr[i], va[i]) * 57.295779515;
+            double pg = mv * g[i];
+            double qb = -mv * b[i];
+            sp += p[i]; sq += q[i]; spg += pg; sqb += qb;
+            mv = Math.Sqrt(mv);
+            double pLoad = Math.Abs(p0[i]);
+            double qLoad = Math.Abs(q0[i]);
+            double pGen = -p[i];
+            double qGen = -q[i];
 
-            double vCalc = Math.Sqrt(vSquared);
-            double pLoad = Math.Max(p0[i], 0.0);
-            double qLoad = Math.Max(q0[i], 0.0);
-            double pGen = Math.Max(-p0[i], 0.0);
-            double qGen = Math.Max(-q0[i], 0.0);
-
+            // Для базового узла приводим генерацию к балансовым знакам, как в Растр Win.
             if (i == 0)
             {
                 pGen = p[i] + pLoad;
                 qGen = -(q[i] - qLoad);
             }
 
-            string nodeType = i == 0 ? "База" : (nk[i] == 2 ? "Ген" : "Нагр");
-            string vSet = nk[i] == 2 ? unom[i].ToString("F2", C) : "-";
-            report.AppendLine(
-                $"{nn[i],5}{nodeType,8}{unom[i],9:F2}{vCalc,10:F2}{delta,9:F2}{pLoad,10:F2}{qLoad,10:F2}{pGen,10:F2}{qGen,10:F2}{vSet,10}");
+            net2.AppendLine($"{nn[i],5}{F2(mv),10}{dv,10:F2}{pLoad,10:F2}{qLoad,10:F2}{pGen,10:F2}{qGen,10:F2}");
         }
 
-        report.AppendLine("---------------------------------------------------");
-        report.AppendLine($"Баланс пассивных элементов {F2(sumP),10}{F2(sumQ),10}{F2(sumPg),10}{F2(sumQb),10}");
-        report.AppendLine("                         + потребление, - генерация ");
-        report.AppendLine();
-
-        report.AppendLine("                              Результаты расчета по ветвям");
-        report.AppendLine(" N_нач N_кон    P_нач    Q_нач    P_кон    Q_кон    I_нач    I_кон      R       X       B      dP      dQ");
+        net2.AppendLine("---------------------------------------------------");
+        net2.AppendLine($"Баланс пассивных элементов {F2(sp),10}{F2(sq),10}{F2(spg),10}{F2(sqb),10}");
+        net2.AppendLine("                         + потребление, - генерация ");
+        net2.AppendLine();
+        net2.AppendLine("                           Результаты расчета по ветвям");
+        net2.AppendLine(" N_нач N_кон      R       X       B    P_нач    Q_нач    P_кон    Q_кон    I_нач    I_кон      dP      Iдоп    Загр,%");
 
         for (int j = 1; j <= m; j++)
         {
@@ -594,8 +587,18 @@ internal sealed class ConsoleApplicationEngine
             double p21 = va[i2] * i2a + vr[i2] * i2r + gy[j] * vSq2 / 2.0;
             double q21 = vr[i2] * i2a - va[i2] * i2r + by[j] * vSq2 / 2.0;
 
-            double dpLoss = Math.Abs(p21 - p12);
-            totalDp += dpLoss;
+            double pStart = Math.Round(-p12, 0, MidpointRounding.AwayFromZero);
+            double qStart = Math.Round(-q12, 0, MidpointRounding.AwayFromZero);
+            double pEnd = Math.Round(-p21, 0, MidpointRounding.AwayFromZero);
+            double qEnd = Math.Round(-q21, 0, MidpointRounding.AwayFromZero);
+            double iStartRounded = Math.Round(iStartAmperes, 0, MidpointRounding.AwayFromZero);
+            double iEndRounded = Math.Round(iEndAmperes, 0, MidpointRounding.AwayFromZero);
+
+            net2.AppendLine(
+                $"{nn[i1],6}{nn[i2],6}" +
+                $"{r[j],8:F2}{x[j],8:F2}{by[j],8:F2}" +
+                $"{pStart,9:F0}{qStart,9:F0}{pEnd,9:F0}{qEnd,9:F0}{iStartRounded,9:F0}{iEndRounded,9:F0}" +
+                $"{dpl,10:F2}{permissibleCurrentByBranch[j],10:F2}{loadingPercent,10:F2}");
 
             double v1Kv = Math.Sqrt(vSq1);
             double v2Kv = Math.Sqrt(vSq2);
