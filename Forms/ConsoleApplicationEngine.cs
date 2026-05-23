@@ -934,6 +934,7 @@ internal sealed class ConsoleApplicationEngine
         public double Ia;
         public double Ir;
         public double R;
+
     }
 }
 
