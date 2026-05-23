@@ -10,6 +10,12 @@ namespace PowerGridEditor
         public double ActiveResistance { get; set; }
         public double ReactiveResistance { get; set; }
         public double ReactiveConductivity { get; set; }
+        // Явный алиас для отчетов/интерфейса Smart Grid (столбец B).
+        public double B
+        {
+            get => ReactiveConductivity;
+            set => ReactiveConductivity = value;
+        }
         public double TransformationRatio { get; set; }
         public double ActiveConductivity { get; set; }
         // Отдельная переменная для Iдоп (А), которая хранит введенное пользователем значение.
