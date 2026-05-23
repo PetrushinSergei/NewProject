@@ -22,6 +22,8 @@ internal struct ReportNodeSnapshot
     public double U;
     public double PLoad;
     public double QLoad;
+    public double PGen;
+    public double QGen;
 
     public static ReportNodeSnapshot FromNode(int number, int type, dynamic d)
     {
@@ -31,7 +33,9 @@ internal struct ReportNodeSnapshot
             Type = type,
             U = d.InitialVoltage,
             PLoad = d.NominalActivePower,
-            QLoad = d.NominalReactivePower
+            QLoad = d.NominalReactivePower,
+            PGen = d.NominalActiveGeneration,
+            QGen = d.NominalReactiveGeneration
         };
     }
 }
@@ -179,8 +183,13 @@ internal sealed class ConsoleApplicationEngine
                 if (t.Length < 6) continue;
                 nn[0] = ParseI(t[2]);
                 unom[0] = ParseD(t[3]);
-                p0[0] = ParseD(t[4]);
-                q0[0] = ParseD(t[5]);
+                double pLoad0 = ParseD(t[4]);
+                double qLoad0 = ParseD(t[5]);
+                double pGen0 = t.Length > 6 ? ParseD(t[6]) : 0.0;
+                double qGen0 = t.Length > 7 ? ParseD(t[7]) : 0.0;
+                // Раздельная модель Smart Grid: инъекция в уравнениях = нагрузка - генерация.
+                p0[0] = pLoad0 - pGen0;
+                q0[0] = qLoad0 - qGen0;
                 nk[0] = 3;
                 g[0] = b[0] = 0;
                 Raion(nn[0]);
@@ -191,8 +200,13 @@ internal sealed class ConsoleApplicationEngine
                 j++;
                 nn[j] = ParseI(t[2]);
                 unom[j] = ParseD(t[3]);
-                p0[j] = ParseD(t[4]);
-                q0[j] = ParseD(t[5]);
+                double pLoad = ParseD(t[4]);
+                double qLoad = ParseD(t[5]);
+                double pGen = t.Length > 6 ? ParseD(t[6]) : 0.0;
+                double qGen = t.Length > 7 ? ParseD(t[7]) : 0.0;
+                // Раздельная модель Smart Grid: инъекция в уравнениях = нагрузка - генерация.
+                p0[j] = pLoad - pGen;
+                q0[j] = qLoad - qGen;
                 nk[j] = 1;
                 g[j] = b[j] = 0;
                 if (t.Length > 8)
@@ -487,25 +501,71 @@ internal sealed class ConsoleApplicationEngine
         sb.AppendLine("           У з л ы    с е т и ");
         sb.AppendLine(" Узел   Тип  Uном        P        Q        g           b ");
 
-            for (int i = 0; i <= n; i++)
-            {
-                sb.AppendLine($"{nn[i],5}{nk[i],5}{Flex(unom[i], 0),7}{Flex(p0[i], 0),9}{Flex(q0[i], 0),9}{Flex(g[i], 5),9}{Flex(b[i], 5),12}");
-            }
+        for (int i = 0; i <= n; i++)
+        {
+            sb.AppendLine($"{nn[i],5}{nk[i],5}{Flex(unom[i], 0),7}{Flex(p0[i], 0),9}{Flex(q0[i], 0),9}{Flex(g[i], 5),9}{Flex(b[i], 5),12}");
+        }
+
+        sb.AppendLine();
+        sb.AppendLine("               В е т в и    с е т и");
+        sb.AppendLine("   N1   N2        r         x            b           g       Kt ");
+
+        for (int j = 1; j <= m; j++)
+        {
+            sb.AppendLine($"{nm[1, j],5}{nm[2, j],5}{Flex(r[j], 3),10}{Flex(x[j], 2),10}{Flex(Math.Abs(by[j]), 7),14}{Flex(gy[j], 0),10}{Flex(kt[j], 0),9}");
+        }
+
+        sb.AppendLine();
+        return sb;
+    }
+
+    private string BuildNetworkRez()
+    {
+        var net2 = new StringBuilder();
+        var raipot = new StringBuilder();
+        tokRows.Clear();
+
+        net2.AppendLine("                             Результаты расчета по узлам");
+        net2.AppendLine("    N     ТИП    U_ном     Vрасч    Delta       P_н       Q_н       P_г       Q_г      V_зд");
+
+        double sp = 0, sq = 0, spg = 0, sqb = 0, dPsum = 0;
 
             sb.AppendLine();
             sb.AppendLine("               В е т в и    с е т и");
             sb.AppendLine("   N1   N2        r         x            b           g       Kt ");
 
-            for (int j = 1; j <= m; j++)
-            {
-                sb.AppendLine($"{nm[1, j],5}{nm[2, j],5}{Flex(r[j], 3),10}{Flex(x[j], 2),10}{Flex(Math.Abs(by[j]), 7),14}{Flex(gy[j], 0),10}{Flex(kt[j], 0),9}");
-            }
+        for (int i = 0; i <= n; i++)
+        {
+            double mv = va[i] * va[i] + vr[i] * vr[i];
+            double dv = Math.Atan2(vr[i], va[i]) * 57.295779515;
+            double pg = mv * g[i];
+            double qb = -mv * b[i];
+            sp += p[i]; sq += q[i]; spg += pg; sqb += qb;
+            mv = Math.Sqrt(mv);
+            double pLoad = Math.Max(p0[i], 0.0);
+            double qLoad = Math.Max(q0[i], 0.0);
+            double pGen = Math.Max(-p0[i], 0.0);
+            double qGen = Math.Max(-q0[i], 0.0);
 
-            sb.AppendLine();
-            return sb;
+            // Для базового узла приводим генерацию к балансовым знакам, как в Растр Win.
+            if (i == 0)
+            {
+                pGen = p[i] + pLoad;
+                qGen = -(q[i] - qLoad);
+            }
+            string nodeType = i == 0 ? "База" : (nk[i] == 2 ? "Ген" : "Нагр");
+            string vSet = nk[i] == 2 ? unom[i].ToString("F2", C) : "-";
+            net2.AppendLine($"{nn[i],5}{nodeType,8}{unom[i],9:F2}{mv,10:F2}{dv,9:F2}{pLoad,10:F2}{qLoad,10:F2}{pGen,10:F2}{qGen,10:F2}{vSet,10}");
         }
 
-        private string BuildNetworkRez()
+        net2.AppendLine("---------------------------------------------------");
+        net2.AppendLine($"Баланс пассивных элементов {F2(sp),10}{F2(sq),10}{F2(spg),10}{F2(sqb),10}");
+        net2.AppendLine("                         + потребление, - генерация ");
+        net2.AppendLine();
+        net2.AppendLine("                              Результаты расчета по ветвям");
+        net2.AppendLine(" N_нач N_кон    P_нач    Q_нач    P_кон    Q_кон    I_нач    I_кон      R       X       B      dP      dQ");
+
+        for (int j = 1; j <= m; j++)
         {
             var net2 = new StringBuilder();
             var raipot = new StringBuilder();
@@ -542,8 +602,18 @@ internal sealed class ConsoleApplicationEngine
                     qGen = -(q[i] - qLoad);
                 }
 
-                net2.AppendLine($"{nn[i],5}{F2(mv),10}{dv,10:F2}{pLoad,10:F2}{qLoad,10:F2}{pGen,10:F2}{qGen,10:F2}");
-            }
+            double pStart = Math.Round(-p12, 0, MidpointRounding.AwayFromZero);
+            double qStart = Math.Round(-q12, 0, MidpointRounding.AwayFromZero);
+            double pEnd = Math.Round(-p21, 0, MidpointRounding.AwayFromZero);
+            double qEnd = Math.Round(-q21, 0, MidpointRounding.AwayFromZero);
+            double iStartRounded = Math.Round(iStartAmperes, 0, MidpointRounding.AwayFromZero);
+            double iEndRounded = Math.Round(iEndAmperes, 0, MidpointRounding.AwayFromZero);
+            double dqLoss = (-q12) + (-q21);
+
+            net2.AppendLine(
+                $"{nn[i1],6}{nn[i2],6}" +
+                $"{pStart,9:F0}{qStart,9:F0}{pEnd,9:F0}{qEnd,9:F0}{iStartRounded,9:F0}{iEndRounded,9:F0}" +
+                $"{r[j],8:F2}{x[j],8:F2}{(-by[j]),8:F2}{dpl,8:F2}{dqLoss,8:F2}");
 
             net2.AppendLine("---------------------------------------------------");
             net2.AppendLine($"Баланс пассивных элементов {F2(sp),10}{F2(sq),10}{F2(spg),10}{F2(sqb),10}");
