@@ -631,36 +631,35 @@ internal sealed class ConsoleApplicationEngine
             int r2 = nn[i2] / kkk;
             while (r2 > 9) r2 /= kk;
 
-            for (int j = 1; j <= m; j++)
-            {
-                areaBranchCount[rk]++;
-                areaLossSum[rk] += dpLoss;
-
-                if (Math.Abs(kt[j] - 1) < 0.001)
-                {
-                    int cls;
-                    if (unom[i1] <= 8) cls = 0;
-                    else if (unom[i1] <= 15) cls = 1;
-                    else if (unom[i1] <= 28) cls = 2;
-                    else if (unom[i1] <= 70) cls = 3;
-                    else if (unom[i1] <= 140) cls = 4;
-                    else if (unom[i1] <= 270) cls = 5;
-                    else if (unom[i1] <= 430) cls = 6;
-                    else if (unom[i1] <= 600) cls = 7;
-                    else if (unom[i1] <= 900) cls = 8;
-                    else cls = 9;
-
-                    lineLossByClass[rk, cls] += dpLoss;
-                    lineCountByClass[rk, cls]++;
-                }
-            }
-            else
+            bool sameArea = rk == r2;
+            if (!sameArea)
             {
                 saldoByArea[0, rk] += -p12;
                 saldoByArea[1, rk] += -q12;
                 saldoByArea[0, r2] += p21;
                 saldoByArea[1, r2] += q21;
+                continue;
             }
+
+            areaBranchCount[rk]++;
+            areaLossSum[rk] += dpLoss;
+
+            if (Math.Abs(kt[j] - 1) >= 0.001) continue;
+
+            int cls;
+            if (unom[i1] <= 8) cls = 0;
+            else if (unom[i1] <= 15) cls = 1;
+            else if (unom[i1] <= 28) cls = 2;
+            else if (unom[i1] <= 70) cls = 3;
+            else if (unom[i1] <= 140) cls = 4;
+            else if (unom[i1] <= 270) cls = 5;
+            else if (unom[i1] <= 430) cls = 6;
+            else if (unom[i1] <= 600) cls = 7;
+            else if (unom[i1] <= 900) cls = 8;
+            else cls = 9;
+
+            lineLossByClass[rk, cls] += dpLoss;
+            lineCountByClass[rk, cls]++;
         }
 
         report.AppendLine($"{F2(totalDp),60}");
