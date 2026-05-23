@@ -522,7 +522,6 @@ internal sealed class ConsoleApplicationEngine
     private string BuildNetworkRez()
     {
         var net2 = new StringBuilder();
-        var raipot = new StringBuilder();
         tokRows.Clear();
 
         net2.AppendLine("                             Результаты расчета по узлам");
@@ -576,31 +575,26 @@ internal sealed class ConsoleApplicationEngine
 
             double sp = 0, sq = 0, spg = 0, sqb = 0, dPsum = 0;
 
-            var saldo = new double[2, 10];
-            var sumpot = new double[10];
-            var sv = new int[10];
-            var line = new double[10, 10];
-            var linc = new int[10, 10];
+            double v1_kV = Math.Sqrt(va[i1] * va[i1] + vr[i1] * vr[i1]);
+            double v2_kV = Math.Sqrt(va[i2] * va[i2] + vr[i2] * vr[i2]);
+            double s1_MVA = Math.Sqrt(p12 * p12 + q12 * q12);
+            double s2_MVA = Math.Sqrt(p21 * p21 + q21 * q21);
+            double iStartAmperes = v1_kV > 0.0 ? (s1_MVA * 1000.0) / (Math.Sqrt(3.0) * v1_kV) : 0.0;
+            double iEndAmperes = v2_kV > 0.0 ? (s2_MVA * 1000.0) / (Math.Sqrt(3.0) * v2_kV) : 0.0;
+            tokRows.Add(new TokRow { Start = i1, End = i2, Ia = RoundFromFlex(i1a, 4), Ir = RoundFromFlex(i1r, 4), R = RoundFromFlex(Math.Abs(r[j]), 3) });
 
-            for (int i = 0; i <= n; i++)
-            {
-                double mv = va[i] * va[i] + vr[i] * vr[i];
-                double dv = Math.Atan2(vr[i], va[i]) * 57.295779515;
-                double pg = mv * g[i];
-                double qb = -mv * b[i];
-                sp += p[i]; sq += q[i]; spg += pg; sqb += qb;
-                mv = Math.Sqrt(mv);
-                double pLoad = Math.Abs(p0[i]);
-                double qLoad = Math.Abs(q0[i]);
-                double pGen = -p[i];
-                double qGen = -q[i];
+            double pStart = Math.Round(-p12, 0, MidpointRounding.AwayFromZero);
+            double qStart = Math.Round(-q12, 0, MidpointRounding.AwayFromZero);
+            double pEnd = Math.Round(-p21, 0, MidpointRounding.AwayFromZero);
+            double qEnd = Math.Round(-q21, 0, MidpointRounding.AwayFromZero);
+            double iStartRounded = Math.Round(iStartAmperes, 0, MidpointRounding.AwayFromZero);
+            double iEndRounded = Math.Round(iEndAmperes, 0, MidpointRounding.AwayFromZero);
+            double dqLoss = (-q12) + (-q21);
 
-                // Для базового узла приводим генерацию к балансовым знакам, как в Растр Win.
-                if (i == 0)
-                {
-                    pGen = p[i] + pLoad;
-                    qGen = -(q[i] - qLoad);
-                }
+            net2.AppendLine(
+                $"{nn[i1],6}{nn[i2],6}" +
+                $"{pStart,9:F0}{qStart,9:F0}{pEnd,9:F0}{qEnd,9:F0}{iStartRounded,9:F0}{iEndRounded,9:F0}" +
+                $"{r[j],8:F2}{x[j],8:F2}{(-by[j]),8:F2}{dpl,8:F2}{dqLoss,8:F2}");
 
             double pStart = Math.Round(-p12, 0, MidpointRounding.AwayFromZero);
             double qStart = Math.Round(-q12, 0, MidpointRounding.AwayFromZero);
