@@ -521,67 +521,97 @@ internal sealed class ConsoleApplicationEngine
 
     private string BuildNetworkRez()
     {
-        var net2 = new StringBuilder();
+        var report = new StringBuilder();
         tokRows.Clear();
 
-        net2.AppendLine("                             Результаты расчета по узлам");
-        net2.AppendLine("    N     ТИП    U_ном     Vрасч    Delta       P_н       Q_н       P_г       Q_г      V_зд");
+        report.AppendLine("                             Результаты расчета по узлам");
+        report.AppendLine("    N     ТИП    U_ном     Vрасч    Delta       P_н       Q_н       P_г       Q_г      V_зд");
 
-        double sp = 0, sq = 0, spg = 0, sqb = 0, dPsum = 0;
+        double sumP = 0.0;
+        double sumQ = 0.0;
+        double sumPg = 0.0;
+        double sumQb = 0.0;
+        double totalDp = 0.0;
 
-            sb.AppendLine();
-            sb.AppendLine("               В е т в и    с е т и");
-            sb.AppendLine("   N1   N2        r         x            b           g       Kt ");
+        var saldoByArea = new double[2, 10];
+        var areaLossSum = new double[10];
+        var areaBranchCount = new int[10];
+        var lineLossByClass = new double[10, 10];
+        var lineCountByClass = new int[10, 10];
 
         for (int i = 0; i <= n; i++)
         {
-            double mv = va[i] * va[i] + vr[i] * vr[i];
-            double dv = Math.Atan2(vr[i], va[i]) * 57.295779515;
-            double pg = mv * g[i];
-            double qb = -mv * b[i];
-            sp += p[i]; sq += q[i]; spg += pg; sqb += qb;
-            mv = Math.Sqrt(mv);
+            double vSquared = va[i] * va[i] + vr[i] * vr[i];
+            double delta = Math.Atan2(vr[i], va[i]) * 57.295779515;
+            double pgPassive = vSquared * g[i];
+            double qbPassive = -vSquared * b[i];
+            sumP += p[i];
+            sumQ += q[i];
+            sumPg += pgPassive;
+            sumQb += qbPassive;
+
+            double vCalc = Math.Sqrt(vSquared);
             double pLoad = Math.Max(p0[i], 0.0);
             double qLoad = Math.Max(q0[i], 0.0);
             double pGen = Math.Max(-p0[i], 0.0);
             double qGen = Math.Max(-q0[i], 0.0);
 
-            // Для базового узла приводим генерацию к балансовым знакам, как в Растр Win.
             if (i == 0)
             {
                 pGen = p[i] + pLoad;
                 qGen = -(q[i] - qLoad);
             }
+
             string nodeType = i == 0 ? "База" : (nk[i] == 2 ? "Ген" : "Нагр");
             string vSet = nk[i] == 2 ? unom[i].ToString("F2", C) : "-";
-            net2.AppendLine($"{nn[i],5}{nodeType,8}{unom[i],9:F2}{mv,10:F2}{dv,9:F2}{pLoad,10:F2}{qLoad,10:F2}{pGen,10:F2}{qGen,10:F2}{vSet,10}");
+            report.AppendLine(
+                $"{nn[i],5}{nodeType,8}{unom[i],9:F2}{vCalc,10:F2}{delta,9:F2}{pLoad,10:F2}{qLoad,10:F2}{pGen,10:F2}{qGen,10:F2}{vSet,10}");
         }
 
-        net2.AppendLine("---------------------------------------------------");
-        net2.AppendLine($"Баланс пассивных элементов {F2(sp),10}{F2(sq),10}{F2(spg),10}{F2(sqb),10}");
-        net2.AppendLine("                         + потребление, - генерация ");
-        net2.AppendLine();
-        net2.AppendLine("                              Результаты расчета по ветвям");
-        net2.AppendLine(" N_нач N_кон    P_нач    Q_нач    P_кон    Q_кон    I_нач    I_кон      R       X       B      dP      dQ");
+        report.AppendLine("---------------------------------------------------");
+        report.AppendLine($"Баланс пассивных элементов {F2(sumP),10}{F2(sumQ),10}{F2(sumPg),10}{F2(sumQb),10}");
+        report.AppendLine("                         + потребление, - генерация ");
+        report.AppendLine();
+
+        report.AppendLine("                              Результаты расчета по ветвям");
+        report.AppendLine(" N_нач N_кон    P_нач    Q_нач    P_кон    Q_кон    I_нач    I_кон      R       X       B      dP      dQ");
 
         for (int j = 1; j <= m; j++)
         {
-            var net2 = new StringBuilder();
-            var raipot = new StringBuilder();
-            tokRows.Clear();
+            int i1 = nm1[1, j];
+            int i2 = nm1[2, j];
 
-            net2.AppendLine("               Результаты расчета по узлам");
-            net2.AppendLine("    N        V      Delta       P_н       Q_н       P_г       Q_г");
+            double i1a = (va[i1] * gr[j] - vr[i1] * bx[j]) / (kt[j] * kt[j]) - (va[i2] * gr[j] - vr[i2] * bx[j]) / kt[j];
+            double i1r = (va[i1] * bx[j] + vr[i1] * gr[j]) / (kt[j] * kt[j]) - (va[i2] * bx[j] + vr[i2] * gr[j]) / kt[j];
+            double i2a = (va[i1] * gr[j] - vr[i1] * bx[j]) / kt[j] - (va[i2] * gr[j] - vr[i2] * bx[j]);
+            double i2r = (va[i1] * bx[j] + vr[i1] * gr[j]) / kt[j] - (va[i2] * bx[j] + vr[i2] * gr[j]);
 
-            double sp = 0, sq = 0, spg = 0, sqb = 0, dPsum = 0;
+            double vSq1 = va[i1] * va[i1] + vr[i1] * vr[i1];
+            double p12 = va[i1] * i1a + vr[i1] * i1r - gy[j] * vSq1 / 2.0;
+            double q12 = vr[i1] * i1a - va[i1] * i1r - by[j] * vSq1 / 2.0;
 
-            double v1_kV = Math.Sqrt(va[i1] * va[i1] + vr[i1] * vr[i1]);
-            double v2_kV = Math.Sqrt(va[i2] * va[i2] + vr[i2] * vr[i2]);
-            double s1_MVA = Math.Sqrt(p12 * p12 + q12 * q12);
-            double s2_MVA = Math.Sqrt(p21 * p21 + q21 * q21);
-            double iStartAmperes = v1_kV > 0.0 ? (s1_MVA * 1000.0) / (Math.Sqrt(3.0) * v1_kV) : 0.0;
-            double iEndAmperes = v2_kV > 0.0 ? (s2_MVA * 1000.0) / (Math.Sqrt(3.0) * v2_kV) : 0.0;
-            tokRows.Add(new TokRow { Start = i1, End = i2, Ia = RoundFromFlex(i1a, 4), Ir = RoundFromFlex(i1r, 4), R = RoundFromFlex(Math.Abs(r[j]), 3) });
+            double vSq2 = va[i2] * va[i2] + vr[i2] * vr[i2];
+            double p21 = va[i2] * i2a + vr[i2] * i2r + gy[j] * vSq2 / 2.0;
+            double q21 = vr[i2] * i2a - va[i2] * i2r + by[j] * vSq2 / 2.0;
+
+            double dpLoss = Math.Abs(p21 - p12);
+            totalDp += dpLoss;
+
+            double v1Kv = Math.Sqrt(vSq1);
+            double v2Kv = Math.Sqrt(vSq2);
+            double s1Mva = Math.Sqrt(p12 * p12 + q12 * q12);
+            double s2Mva = Math.Sqrt(p21 * p21 + q21 * q21);
+            double iStartAmperes = v1Kv > 0.0 ? (s1Mva * 1000.0) / (Math.Sqrt(3.0) * v1Kv) : 0.0;
+            double iEndAmperes = v2Kv > 0.0 ? (s2Mva * 1000.0) / (Math.Sqrt(3.0) * v2Kv) : 0.0;
+
+            tokRows.Add(new TokRow
+            {
+                Start = i1,
+                End = i2,
+                Ia = RoundFromFlex(i1a, 4),
+                Ir = RoundFromFlex(i1r, 4),
+                R = RoundFromFlex(Math.Abs(r[j]), 3)
+            });
 
             double pStart = Math.Round(-p12, 0, MidpointRounding.AwayFromZero);
             double qStart = Math.Round(-q12, 0, MidpointRounding.AwayFromZero);
@@ -589,116 +619,53 @@ internal sealed class ConsoleApplicationEngine
             double qEnd = Math.Round(-q21, 0, MidpointRounding.AwayFromZero);
             double iStartRounded = Math.Round(iStartAmperes, 0, MidpointRounding.AwayFromZero);
             double iEndRounded = Math.Round(iEndAmperes, 0, MidpointRounding.AwayFromZero);
-            double dqLoss = (-q12) + (-q21);
+            double dqLoss = qStart + qEnd;
 
-            net2.AppendLine(
+            report.AppendLine(
                 $"{nn[i1],6}{nn[i2],6}" +
                 $"{pStart,9:F0}{qStart,9:F0}{pEnd,9:F0}{qEnd,9:F0}{iStartRounded,9:F0}{iEndRounded,9:F0}" +
-                $"{r[j],8:F2}{x[j],8:F2}{(-by[j]),8:F2}{dpl,8:F2}{dqLoss,8:F2}");
+                $"{r[j],8:F2}{x[j],8:F2}{(-by[j]),8:F2}{dpLoss,8:F2}{dqLoss,8:F2}");
 
-            double pStart = Math.Round(-p12, 0, MidpointRounding.AwayFromZero);
-            double qStart = Math.Round(-q12, 0, MidpointRounding.AwayFromZero);
-            double pEnd = Math.Round(-p21, 0, MidpointRounding.AwayFromZero);
-            double qEnd = Math.Round(-q21, 0, MidpointRounding.AwayFromZero);
-            double iStartRounded = Math.Round(iStartAmperes, 0, MidpointRounding.AwayFromZero);
-            double iEndRounded = Math.Round(iEndAmperes, 0, MidpointRounding.AwayFromZero);
-            double dqLoss = (-q12) + (-q21);
-
-            net2.AppendLine(
-                $"{nn[i1],6}{nn[i2],6}" +
-                $"{pStart,9:F0}{qStart,9:F0}{pEnd,9:F0}{qEnd,9:F0}{iStartRounded,9:F0}{iEndRounded,9:F0}" +
-                $"{r[j],8:F2}{x[j],8:F2}{(-by[j]),8:F2}{dpl,8:F2}{dqLoss,8:F2}");
-
-            net2.AppendLine("---------------------------------------------------");
-            net2.AppendLine($"Баланс пассивных элементов {F2(sp),10}{F2(sq),10}{F2(spg),10}{F2(sqb),10}");
-            net2.AppendLine("                         + потребление, - генерация ");
-            net2.AppendLine();
-            net2.AppendLine("                           Результаты расчета по ветвям");
-            net2.AppendLine(" N_нач N_кон      R       X       B    P_нач    Q_нач    P_кон    Q_кон    I_нач    I_кон      dP      Iдоп    Загр,%");
+            int rk = nn[i1] / kkk;
+            while (rk > 9) rk /= kk;
+            int r2 = nn[i2] / kkk;
+            while (r2 > 9) r2 /= kk;
 
             for (int j = 1; j <= m; j++)
             {
-                int i1 = nm1[1, j], i2 = nm1[2, j];
+                areaBranchCount[rk]++;
+                areaLossSum[rk] += dpLoss;
 
-                double i1a = (va[i1] * gr[j] - vr[i1] * bx[j]) / (kt[j] * kt[j]) - (va[i2] * gr[j] - vr[i2] * bx[j]) / kt[j];
-                double i1r = (va[i1] * bx[j] + vr[i1] * gr[j]) / (kt[j] * kt[j]) - (va[i2] * bx[j] + vr[i2] * gr[j]) / kt[j];
-                double i2a = (va[i1] * gr[j] - vr[i1] * bx[j]) / kt[j] - (va[i2] * gr[j] - vr[i2] * bx[j]);
-                double i2r = (va[i1] * bx[j] + vr[i1] * gr[j]) / kt[j] - (va[i2] * bx[j] + vr[i2] * gr[j]);
-
-                double mv = va[i1] * va[i1] + vr[i1] * vr[i1];
-                double p12 = va[i1] * i1a + vr[i1] * i1r - gy[j] * mv / 2.0;
-                double q12 = vr[i1] * i1a - va[i1] * i1r - by[j] * mv / 2.0;
-
-                mv = va[i2] * va[i2] + vr[i2] * vr[i2];
-                double p21 = va[i2] * i2a + vr[i2] * i2r + gy[j] * mv / 2.0;
-                double q21 = vr[i2] * i2a - va[i2] * i2r + by[j] * mv / 2.0;
-
-                double dpl = Math.Abs(p21 - p12);
-                dPsum += dpl;
-
-                double v1_kV = Math.Sqrt(va[i1] * va[i1] + vr[i1] * vr[i1]);
-                double v2_kV = Math.Sqrt(va[i2] * va[i2] + vr[i2] * vr[i2]);
-                double s1_MVA = Math.Sqrt(p12 * p12 + q12 * q12);
-                double s2_MVA = Math.Sqrt(p21 * p21 + q21 * q21);
-                double iStartAmperes = v1_kV > 0.0 ? (s1_MVA * 1000.0) / (Math.Sqrt(3.0) * v1_kV) : 0.0;
-                double iEndAmperes = v2_kV > 0.0 ? (s2_MVA * 1000.0) / (Math.Sqrt(3.0) * v2_kV) : 0.0;
-                // Наиболее опасный ток по ветви — максимум из токов на обоих концах.
-                double iFactMax = Math.Max(iStartAmperes, iEndAmperes);
-                // Загр,% = Iмакс.факт / Iдоп * 100. Если Iдоп не задан, показываем 0.
-                double loadingPercent = permissibleCurrentByBranch[j] > 0.0 ? (iFactMax / permissibleCurrentByBranch[j]) * 100.0 : 0.0;
-
-                tokRows.Add(new TokRow { Start = i1, End = i2, Ia = RoundFromFlex(i1a, 4), Ir = RoundFromFlex(i1r, 4), R = RoundFromFlex(Math.Abs(r[j]), 3) });
-
-                double pStart = Math.Round(-p12, 0, MidpointRounding.AwayFromZero);
-                double qStart = Math.Round(-q12, 0, MidpointRounding.AwayFromZero);
-                double pEnd = Math.Round(-p21, 0, MidpointRounding.AwayFromZero);
-                double qEnd = Math.Round(-q21, 0, MidpointRounding.AwayFromZero);
-                double iStartRounded = Math.Round(iStartAmperes, 0, MidpointRounding.AwayFromZero);
-                double iEndRounded = Math.Round(iEndAmperes, 0, MidpointRounding.AwayFromZero);
-
-                net2.AppendLine(
-                    $"{nn[i1],6}{nn[i2],6}" +
-                    $"{r[j],8:F2}{x[j],8:F2}{by[j],8:F2}" +
-                    $"{pStart,9:F0}{qStart,9:F0}{pEnd,9:F0}{qEnd,9:F0}{iStartRounded,9:F0}{iEndRounded,9:F0}" +
-                    $"{dpl,10:F2}{permissibleCurrentByBranch[j],10:F2}{loadingPercent,10:F2}");
-
-                int rk = nn[i1] / kkk; while (rk > 9) rk /= kk;
-                int r2 = nn[i2] / kkk; while (r2 > 9) r2 /= kk;
-
-                if (rk == r2)
+                if (Math.Abs(kt[j] - 1) < 0.001)
                 {
-                    sv[rk]++;
-                    sumpot[rk] += dpl;
-                    if (Math.Abs(kt[j] - 1) < 0.001)
-                    {
-                        int cls = 0;
-                        if (unom[i1] <= 8) cls = 0;
-                        else if (unom[i1] <= 15) cls = 1;
-                        else if (unom[i1] <= 28) cls = 2;
-                        else if (unom[i1] <= 70) cls = 3;
-                        else if (unom[i1] <= 140) cls = 4;
-                        else if (unom[i1] <= 270) cls = 5;
-                        else if (unom[i1] <= 430) cls = 6;
-                        else if (unom[i1] <= 600) cls = 7;
-                        else if (unom[i1] <= 900) cls = 8;
-                        else cls = 9;
-                        line[rk, cls] += dpl;
-                        linc[rk, cls]++;
-                    }
+                    int cls;
+                    if (unom[i1] <= 8) cls = 0;
+                    else if (unom[i1] <= 15) cls = 1;
+                    else if (unom[i1] <= 28) cls = 2;
+                    else if (unom[i1] <= 70) cls = 3;
+                    else if (unom[i1] <= 140) cls = 4;
+                    else if (unom[i1] <= 270) cls = 5;
+                    else if (unom[i1] <= 430) cls = 6;
+                    else if (unom[i1] <= 600) cls = 7;
+                    else if (unom[i1] <= 900) cls = 8;
+                    else cls = 9;
+
+                    lineLossByClass[rk, cls] += dpLoss;
+                    lineCountByClass[rk, cls]++;
                 }
-
-                else
-                {
-                saldo[0, rk] += -p12;
-                saldo[1, rk] += -q12;
-                saldo[0, r2] += p21;
-                saldo[1, r2] += q21;
+            }
+            else
+            {
+                saldoByArea[0, rk] += -p12;
+                saldoByArea[1, rk] += -q12;
+                saldoByArea[0, r2] += p21;
+                saldoByArea[1, r2] += q21;
             }
         }
 
-        net2.AppendLine($"{F2(dPsum),60}");
-        lastNetworkRip = BuildNetworkRipText(nus, sv, line, linc, saldo, sumpot);
-        return net2.ToString();
+        report.AppendLine($"{F2(totalDp),60}");
+        lastNetworkRip = BuildNetworkRipText(nus, areaBranchCount, lineLossByClass, lineCountByClass, saldoByArea, areaLossSum);
+        return report.ToString();
     }
 
     private string lastNetworkRip = "";
