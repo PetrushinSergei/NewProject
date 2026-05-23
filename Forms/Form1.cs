@@ -15,7 +15,6 @@ using System.Net.Sockets;
 using NModbus;
 
 
-
 namespace PowerGridEditor
 {
     public partial class Form1 : Form
@@ -588,11 +587,11 @@ namespace PowerGridEditor
 
             AddSectionRow("Узлы");
             foreach (var node in graphicElements.OfType<GraphicNode>().OrderBy(n => n.Data.Number))
-                AddRowsForNode("Узел", $"N{node.Data.Number}", node.Data, node, new[] { ("U", "Номинальное напряжение, кВ", node.Data.InitialVoltage), ("Ufact", "Фактическое напряжение, кВ", node.Data.ActualVoltage), ("Ucalc", "Расчётное напряжение, кВ", node.Data.CalculatedVoltage), ("P", "P нагрузка, МВт", node.Data.NominalActivePower), ("Q", "Q нагрузка, Мвар", node.Data.NominalReactivePower), ("Pgen", "P_г генерация, МВт", node.Data.NominalActiveGeneration), ("Qgen", "Q_г генерация, Мвар", node.Data.NominalReactiveGeneration), ("Uf", "U фикс., кВ", node.Data.FixedVoltageModule), ("Qmin", "Q мин, Мвар", node.Data.MinReactivePower), ("Qmax", "Q макс, Мвар", node.Data.MaxReactivePower) });
+                AddRowsForNode("Узел", $"N{node.Data.Number}", node.Data, node, new[] { ("U", "Номинальное напряжение, кВ", node.Data.InitialVoltage), ("Ufact", "Фактическое напряжение, кВ", node.Data.ActualVoltage), ("Ucalc", "Расчётное напряжение, кВ", node.Data.CalculatedVoltage), ("P", "P нагрузка, МВт", node.Data.NominalActivePower), ("Q", "Q нагрузка, Мвар", node.Data.NominalReactivePower), ("Pg", "P генерация, МВт", node.Data.ActivePowerGeneration), ("Qg", "Q генерация, Мвар", node.Data.ReactivePowerGeneration), ("Uf", "U фикс., кВ", node.Data.FixedVoltageModule), ("Qmin", "Q мин, Мвар", node.Data.MinReactivePower), ("Qmax", "Q макс, Мвар", node.Data.MaxReactivePower) });
 
             AddSectionRow("Базисный узел");
             foreach (var baseNode in graphicElements.OfType<GraphicBaseNode>().OrderBy(n => n.Data.Number))
-                AddRowsForNode("Базисный узел", $"B{baseNode.Data.Number}", baseNode.Data, baseNode, new[] { ("U", "Номинальное напряжение, кВ", baseNode.Data.InitialVoltage), ("Ufact", "Фактическое напряжение, кВ", baseNode.Data.ActualVoltage), ("Ucalc", "Расчётное напряжение, кВ", baseNode.Data.CalculatedVoltage), ("P", "P нагрузка, МВт", baseNode.Data.NominalActivePower), ("Q", "Q нагрузка, Мвар", baseNode.Data.NominalReactivePower), ("Pgen", "P_г генерация, МВт", baseNode.Data.NominalActiveGeneration), ("Qgen", "Q_г генерация, Мвар", baseNode.Data.NominalReactiveGeneration), ("Uf", "U фикс., кВ", baseNode.Data.FixedVoltageModule), ("Qmin", "Q мин, Мвар", baseNode.Data.MinReactivePower), ("Qmax", "Q макс, Мвар", baseNode.Data.MaxReactivePower) });
+                AddRowsForNode("Базисный узел", $"B{baseNode.Data.Number}", baseNode.Data, baseNode, new[] { ("U", "Номинальное напряжение, кВ", baseNode.Data.InitialVoltage), ("Ufact", "Фактическое напряжение, кВ", baseNode.Data.ActualVoltage), ("Ucalc", "Расчётное напряжение, кВ", baseNode.Data.CalculatedVoltage), ("P", "P нагрузка, МВт", baseNode.Data.NominalActivePower), ("Q", "Q нагрузка, Мвар", baseNode.Data.NominalReactivePower), ("Pg", "P генерация, МВт", baseNode.Data.ActivePowerGeneration), ("Qg", "Q генерация, Мвар", baseNode.Data.ReactivePowerGeneration), ("Uf", "U фикс., кВ", baseNode.Data.FixedVoltageModule), ("Qmin", "Q мин, Мвар", baseNode.Data.MinReactivePower), ("Qmax", "Q макс, Мвар", baseNode.Data.MaxReactivePower) });
 
             AddSectionRow("Ветви");
             foreach (var branch in graphicBranches.OrderBy(b => b.Data.StartNodeNumber).ThenBy(b => b.Data.EndNodeNumber))
@@ -921,8 +920,8 @@ namespace PowerGridEditor
             if (key == "Ucalc") return data.CalculatedVoltage;
             if (key == "P") return data.NominalActivePower;
             if (key == "Q") return data.NominalReactivePower;
-            if (key == "Pg" || key == "Pgen") return data.NominalActiveGeneration;
-            if (key == "Qg" || key == "Qgen") return data.NominalReactiveGeneration;
+            if (key == "Pg") return data.ActivePowerGeneration;
+            if (key == "Qg") return data.ReactivePowerGeneration;
             if (key == "Uf") return data.FixedVoltageModule;
             if (key == "Qmin") return data.MinReactivePower;
             if (key == "Qmax") return data.MaxReactivePower;
@@ -958,8 +957,8 @@ namespace PowerGridEditor
             else if (key == "Ucalc") data.CalculatedVoltage = value;
             else if (key == "P") data.NominalActivePower = value;
             else if (key == "Q") data.NominalReactivePower = value;
-            else if (key == "Pg" || key == "Pgen") data.NominalActiveGeneration = value;
-            else if (key == "Qg" || key == "Qgen") data.NominalReactiveGeneration = value;
+            else if (key == "Pg") data.ActivePowerGeneration = value;
+            else if (key == "Qg") data.ReactivePowerGeneration = value;
             else if (key == "Uf") data.FixedVoltageModule = value;
             else if (key == "Qmin") data.MinReactivePower = value;
             else if (key == "Qmax") data.MaxReactivePower = value;
@@ -3298,8 +3297,8 @@ namespace PowerGridEditor
             if (key == "Ucalc") return "Расчётное напряжение";
             if (key == "P") return "P нагрузка";
             if (key == "Q") return "Q нагрузка";
-            if (key == "Pg" || key == "Pgen") return "P генерация";
-            if (key == "Qg" || key == "Qgen") return "Q генерация";
+            if (key == "Pg") return "P генерация";
+            if (key == "Qg") return "Q генерация";
             if (key == "Uf") return "U фикс.";
             if (key == "Qmin") return "Q мин";
             if (key == "Qmax") return "Q макс";

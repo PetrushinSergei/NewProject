@@ -13,17 +13,6 @@ namespace PowerGridEditor
         public double NominalReactivePower { get; set; }
         public double ActivePowerGeneration { get; set; }
         public double ReactivePowerGeneration { get; set; }
-        // Smart Grid: раздельный ввод генерации в узле (алиасы к существующим полям генерации).
-        public double NominalActiveGeneration
-        {
-            get => ActivePowerGeneration;
-            set => ActivePowerGeneration = value;
-        }
-        public double NominalReactiveGeneration
-        {
-            get => ReactivePowerGeneration;
-            set => ReactivePowerGeneration = value;
-        }
         public double FixedVoltageModule { get; set; }
         public double MinReactivePower { get; set; }
         public double MaxReactivePower { get; set; }

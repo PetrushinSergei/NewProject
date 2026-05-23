@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "8K/gRHhEAyY=",
+  "success": true,
+  "projectFilePath": "D:\\НГТУ\\Диплом\\MAIN CODE\\PowerGridEditor-main\\PowerGridEditor 2\\PowerGridEditor.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\Петрушин Сергей\\.nuget\\packages\\nmodbus\\3.0.81\\nmodbus.3.0.81.nupkg.sha512"
+  ],
+  "logs": []
+}
