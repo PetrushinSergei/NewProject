@@ -4050,12 +4050,22 @@ namespace PowerGridEditor
                     continue;
                 }
 
-                if (!int.TryParse(parts[0], out var nodeNumber))
+                // Актуальный формат: "ТИП N U_ном ... V Delta" (номер узла второй колонкой, V предпоследней).
+                // Поддерживаем и старый формат: "N V" (номер узла первой колонкой, V второй).
+                if (parts.Length >= 12 &&
+                    int.TryParse(parts[1], out int parsedNodeNumber) &&
+                    double.TryParse(parts[parts.Length - 2], NumberStyles.Float, CultureInfo.InvariantCulture, out double parsedUFact))
+                {
+                    result[parsedNodeNumber] = parsedUFact;
+                    continue;
+                }
+
+                if (!int.TryParse(parts[0], out int nodeNumber))
                 {
                     continue;
                 }
 
-                if (double.TryParse(parts[1], NumberStyles.Float, CultureInfo.InvariantCulture, out var uFact))
+                if (double.TryParse(parts[1], NumberStyles.Float, CultureInfo.InvariantCulture, out double uFact))
                 {
                     result[nodeNumber] = uFact;
                 }
