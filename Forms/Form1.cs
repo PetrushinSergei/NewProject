@@ -4085,6 +4085,33 @@ namespace PowerGridEditor
 
                 if (!int.TryParse(parts[0], out int nodeNumber))
                 {
+                    int[] vColumnCandidates = parts.Length >= 13
+                        ? new[] { parts.Length - 3, parts.Length - 2 }
+                        : new[] { parts.Length - 2 };
+
+                    foreach (int vColumnIndex in vColumnCandidates)
+                    {
+                        if (vColumnIndex < 0 || vColumnIndex >= parts.Length)
+                        {
+                            continue;
+                        }
+
+                        if (double.TryParse(parts[vColumnIndex], NumberStyles.Float, CultureInfo.InvariantCulture, out double parsedUFact))
+                        {
+                            result[parsedNodeNumber] = parsedUFact;
+                            break;
+                        }
+                    }
+
+                    if (result.ContainsKey(parsedNodeNumber))
+                    {
+                        continue;
+                    }
+                }
+
+                if (!int.TryParse(parts[0], out int nodeNumber))
+                {
+                    result[parsedNodeNumber] = parsedUFact;
                     continue;
                 }
 
