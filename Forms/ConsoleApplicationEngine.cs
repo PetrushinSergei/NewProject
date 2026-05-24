@@ -530,17 +530,30 @@ internal sealed class ConsoleApplicationEngine
                 double qb = -mv * b[i];
                 sp += p[i]; sq += q[i]; spg += pg; sqb += qb;
                 mv = Math.Sqrt(mv);
+
+                // 1. Нагрузка всегда берется из исходных данных
                 double pLoad = Math.Abs(p0[i]);
                 double qLoad = Math.Abs(q0[i]);
-                double pGen = -p[i];
-                double qGen = -q[i];
 
-                // Для базового узла приводим генерацию к балансовым знакам, как в Растр Win.
-                if (i == 0)
-                {
-                    pGen = p[i] + pLoad;
-                    qGen = -(q[i] - qLoad);
-                }
+                // 2. Рассчитываем генерацию через баланс p[i] и q[i]
+                // p[i] и q[i] — это мощность, уходящая В СЕТЬ.
+                // Если узел генерирует, то p[i] положительно (или отрицательно, в зависимости от знака в расчете).
+                // Формула: P_ген = P_сети + P_нагрузки
+
+                double pGen = 0.0;
+                double qGen = 0.0;
+
+                // Для всех узлов (кроме тех, где генерации быть не может)
+                // Проверяем: если p[i] + pLoad дает значимую величину, значит, есть генерация
+                double pSum = p[i] + pLoad;
+                double qSum = q[i] + qLoad;
+
+                if (Math.Abs(pSum) > 0.1) pGen = pSum;
+                if (Math.Abs(qSum) > 0.1) qGen = qSum;
+
+                // Корректировка знака для генератора (чтобы соответствовало колонкам Растра)
+                // В Растре P_г у генераторов обычно положительно
+                pGen = Math.Abs(pGen);
 
                 net2.AppendLine($"{nn[i],5}{F2(mv),10}{dv,10:F2}{pLoad,10:F2}{qLoad,10:F2}{pGen,10:F2}{qGen,10:F2}");
             }
@@ -550,7 +563,7 @@ internal sealed class ConsoleApplicationEngine
             net2.AppendLine("                         + потребление, - генерация ");
             net2.AppendLine();
             net2.AppendLine("                           Результаты расчета по ветвям");
-            net2.AppendLine(" N_нач N_кон      R       X       B    P_нач    Q_нач    P_кон    Q_кон    I_нач    I_кон      dP      Iдоп    Загр,%");
+            net2.AppendLine(" N_нач N_кон      R       X       B    P_нач    Q_нач    P_кон    Q_кон    I_нач    I_кон      dP      dQ      Iдоп    Загр,%");
 
             for (int j = 1; j <= m; j++)
             {
@@ -570,6 +583,14 @@ internal sealed class ConsoleApplicationEngine
                 double q21 = vr[i2] * i2a - va[i2] * i2r + by[j] * mv / 2.0;
 
                 double dpl = Math.Abs(p21 - p12);
+
+                // Считаем реактивную мощность ветви БЕЗ учета емкости генерации линии
+                double q12_series = vr[i1] * i1a - va[i1] * i1r;
+                double q21_series = vr[i2] * i2a - va[i2] * i2r;
+
+                // Теперь вычитаем их — получаем чистые потери I^2 * X, как в Растре
+                double dql = Math.Abs(q21_series - q12_series);
+
                 dPsum += dpl;
 
                 double v1_kV = Math.Sqrt(va[i1] * va[i1] + vr[i1] * vr[i1]);
@@ -593,10 +614,10 @@ internal sealed class ConsoleApplicationEngine
                 double iEndRounded = Math.Round(iEndAmperes, 0, MidpointRounding.AwayFromZero);
 
                 net2.AppendLine(
-                    $"{nn[i1],6}{nn[i2],6}" +
-                    $"{r[j],8:F2}{x[j],8:F2}{by[j],8:F2}" +
-                    $"{pStart,9:F0}{qStart,9:F0}{pEnd,9:F0}{qEnd,9:F0}{iStartRounded,9:F0}{iEndRounded,9:F0}" +
-                    $"{dpl,10:F2}{permissibleCurrentByBranch[j],10:F2}{loadingPercent,10:F2}");
+              $"{nn[i1],6}{nn[i2],6}" +
+              $"{r[j],8:F2}{x[j],8:F2}{-by[j] * 1000000,8:F2}" + // Минус перед бы, перевод в мкСм прямо здесь
+              $"{pStart,9:F0}{qStart,9:F0}{pEnd,9:F0}{qEnd,9:F0}{iStartRounded,9:F0}{iEndRounded,9:F0}" +
+              $"{dpl,10:F2}{dql,10:F2}{permissibleCurrentByBranch[j],10:F2}{loadingPercent,10:F2}");
 
                 int rk = nn[i1] / kkk; while (rk > 9) rk /= kk;
                 int r2 = nn[i2] / kkk; while (r2 > 9) r2 /= kk;
