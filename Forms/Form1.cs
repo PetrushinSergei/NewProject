@@ -3102,6 +3102,7 @@ namespace PowerGridEditor
         private PointF pan = PointF.Empty;   // сдвиг холста в пикселях
         private bool panning = false;        // тянем ли холст ПКМ
         private Point lastPanPos;            // предыдущая точка при панораме
+        private double parsedUFact;
 
         private void Form1_MouseWheel(object sender, MouseEventArgs e)
         {
