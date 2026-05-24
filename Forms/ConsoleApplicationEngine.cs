@@ -58,6 +58,11 @@ internal sealed class ConsoleApplicationEngine
     private readonly double[] unom = new double[inn];
     private readonly double[] p0 = new double[inn];
     private readonly double[] q0 = new double[inn];
+    private readonly double[] pg0 = new double[inn];
+    private readonly double[] qg0 = new double[inn];
+    private readonly double[] vzad = new double[inn];
+    private readonly double[] qmin0 = new double[inn];
+    private readonly double[] qmax0 = new double[inn];
     private readonly double[] g = new double[inn];
     private readonly double[] b = new double[inn];
     private readonly double[] r = new double[imm];
@@ -181,6 +186,11 @@ internal sealed class ConsoleApplicationEngine
                 unom[0] = ParseD(t[3]);
                 p0[0] = ParseD(t[4]);
                 q0[0] = ParseD(t[5]);
+                pg0[0] = t.Length > 6 ? ParseD(t[6]) : 0;
+                qg0[0] = t.Length > 7 ? ParseD(t[7]) : 0;
+                vzad[0] = t.Length > 8 ? ParseD(t[8]) : 0;
+                qmin0[0] = t.Length > 9 ? ParseD(t[9]) : 0;
+                qmax0[0] = t.Length > 10 ? ParseD(t[10]) : 0;
                 nk[0] = 3;
                 g[0] = b[0] = 0;
                 Raion(nn[0]);
@@ -193,14 +203,17 @@ internal sealed class ConsoleApplicationEngine
                 unom[j] = ParseD(t[3]);
                 p0[j] = ParseD(t[4]);
                 q0[j] = ParseD(t[5]);
+                pg0[j] = t.Length > 6 ? ParseD(t[6]) : 0;
+                qg0[j] = t.Length > 7 ? ParseD(t[7]) : 0;
+                vzad[j] = t.Length > 8 ? ParseD(t[8]) : 0;
+                qmin0[j] = t.Length > 9 ? ParseD(t[9]) : 0;
+                qmax0[j] = t.Length > 10 ? ParseD(t[10]) : 0;
                 nk[j] = 1;
                 g[j] = b[j] = 0;
                 if (t.Length > 8)
                 {
-                    double uv = ParseD(t[8]);
-                    if (uv > 0.1)
+                    if (vzad[j] > 0.1)
                     {
-                        unom[j] = uv;
                         nk[j] = 2;
                     }
                 }
@@ -512,7 +525,7 @@ internal sealed class ConsoleApplicationEngine
             tokRows.Clear();
 
             net2.AppendLine("               Результаты расчета по узлам");
-            net2.AppendLine("    N        V      Delta       P_н       Q_н       P_г       Q_г");
+            net2.AppendLine("  ТИП     N    U_ном      P_н       Q_н       P_г       Q_г      V_зд    Q_min    Q_max        V    Delta");
 
             double sp = 0, sq = 0, spg = 0, sqb = 0, dPsum = 0;
 
@@ -531,31 +544,13 @@ internal sealed class ConsoleApplicationEngine
                 sp += p[i]; sq += q[i]; spg += pg; sqb += qb;
                 mv = Math.Sqrt(mv);
 
-                // 1. Нагрузка всегда берется из исходных данных
-                double pLoad = Math.Abs(p0[i]);
+                                double pLoad = Math.Abs(p0[i]);
                 double qLoad = Math.Abs(q0[i]);
+                double pGen = pg0[i];
+                double qGen = qg0[i];
 
-                // 2. Рассчитываем генерацию через баланс p[i] и q[i]
-                // p[i] и q[i] — это мощность, уходящая В СЕТЬ.
-                // Если узел генерирует, то p[i] положительно (или отрицательно, в зависимости от знака в расчете).
-                // Формула: P_ген = P_сети + P_нагрузки
-
-                double pGen = 0.0;
-                double qGen = 0.0;
-
-                // Для всех узлов (кроме тех, где генерации быть не может)
-                // Проверяем: если p[i] + pLoad дает значимую величину, значит, есть генерация
-                double pSum = p[i] + pLoad;
-                double qSum = q[i] + qLoad;
-
-                if (Math.Abs(pSum) > 0.1) pGen = pSum;
-                if (Math.Abs(qSum) > 0.1) qGen = qSum;
-
-                // Корректировка знака для генератора (чтобы соответствовало колонкам Растра)
-                // В Растре P_г у генераторов обычно положительно
-                pGen = Math.Abs(pGen);
-
-                net2.AppendLine($"{nn[i],5}{F2(mv),10}{dv,10:F2}{pLoad,10:F2}{qLoad,10:F2}{pGen,10:F2}{qGen,10:F2}");
+                string type = nk[i] == 3 ? "База" : (nk[i] == 2 ? "Ген" : "Нагр");
+                net2.AppendLine($"{type,6}{nn[i],6}{unom[i],9:F2}{pLoad,10:F2}{qLoad,10:F2}{pGen,10:F2}{qGen,10:F2}{vzad[i],10:F2}{qmin0[i],9:F2}{qmax0[i],9:F2}{mv,9:F2}{dv,9:F2}");
             }
 
             net2.AppendLine("---------------------------------------------------");
