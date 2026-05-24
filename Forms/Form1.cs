@@ -4069,13 +4069,13 @@ namespace PowerGridEditor
                         }
 
                         double parsedVoltage = 0;
-                        if (double.TryParse(parts[vColumnIndex], NumberStyles.Float, CultureInfo.InvariantCulture, out parsedVoltage))
+                        if (TryParseResultDouble(parts[vColumnIndex], out parsedVoltage))
                         {
                             double parsedDuPercent = 0;
                             int duColumnIndex = parts.Length - 1;
                             if (duColumnIndex >= 0 && duColumnIndex < parts.Length)
                             {
-                                double.TryParse(parts[duColumnIndex], NumberStyles.Float, CultureInfo.InvariantCulture, out parsedDuPercent);
+                                TryParseResultDouble(parts[duColumnIndex], out parsedDuPercent);
                             }
 
                             result[parsedNodeNumber] = (parsedVoltage, parsedDuPercent);
@@ -4098,13 +4098,36 @@ namespace PowerGridEditor
                 }
 
                 double legacyVoltage = 0;
-                if (double.TryParse(parts[1], NumberStyles.Float, CultureInfo.InvariantCulture, out legacyVoltage))
+                if (TryParseResultDouble(parts[1], out legacyVoltage))
                 {
                     result[nodeNumber] = (legacyVoltage, 0);
                 }
             }
 
             return result;
+        }
+
+        private bool TryParseResultDouble(string value, out double parsed)
+        {
+            parsed = 0;
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return false;
+            }
+
+            string normalized = value.Trim().Replace("%", string.Empty);
+            if (double.TryParse(normalized, NumberStyles.Float, CultureInfo.InvariantCulture, out parsed))
+            {
+                return true;
+            }
+
+            if (double.TryParse(normalized, NumberStyles.Float, CultureInfo.GetCultureInfo("ru-RU"), out parsed))
+            {
+                return true;
+            }
+
+            normalized = normalized.Replace(',', '.');
+            return double.TryParse(normalized, NumberStyles.Float, CultureInfo.InvariantCulture, out parsed);
         }
 
         private Color GetNodeVoltageColorFromDuPercent(double duPercent)
