@@ -4086,6 +4086,7 @@ namespace PowerGridEditor
                 int nodeNumber = 0;
                 if (!int.TryParse(parts[0], out nodeNumber))
                 {
+                    result[parsedNodeNumber] = parsedUFact;
                     continue;
                 }
 
