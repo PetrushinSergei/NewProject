@@ -82,3 +82,20 @@ D:\НГТУ\Диплом\MAIN CODE\5 эксперимент\obj\Debug\PowerGridE
 D:\НГТУ\Диплом\MAIN CODE\5 эксперимент\obj\Debug\PowerGri.81ACA730.Up2Date
 D:\НГТУ\Диплом\MAIN CODE\5 эксперимент\obj\Debug\PowerGridEditor.exe
 D:\НГТУ\Диплом\MAIN CODE\5 эксперимент\obj\Debug\PowerGridEditor.pdb
+D:\НГТУ\Диплом\MAIN CODE\5 Github рабочее\bin\Debug\PowerGridEditor.exe.config
+D:\НГТУ\Диплом\MAIN CODE\5 Github рабочее\bin\Debug\PowerGridEditor.exe
+D:\НГТУ\Диплом\MAIN CODE\5 Github рабочее\bin\Debug\PowerGridEditor.pdb
+D:\НГТУ\Диплом\MAIN CODE\5 Github рабочее\bin\Debug\NModbus.dll
+D:\НГТУ\Диплом\MAIN CODE\5 Github рабочее\obj\Debug\PowerGridEditor.csproj.AssemblyReference.cache
+D:\НГТУ\Диплом\MAIN CODE\5 Github рабочее\obj\Debug\PowerGridEditor.exe.config
+D:\НГТУ\Диплом\MAIN CODE\5 Github рабочее\obj\Debug\PowerGridEditor.BaseNodeForm.resources
+D:\НГТУ\Диплом\MAIN CODE\5 Github рабочее\obj\Debug\PowerGridEditor.BranchForm.resources
+D:\НГТУ\Диплом\MAIN CODE\5 Github рабочее\obj\Debug\PowerGridEditor.Form1.resources
+D:\НГТУ\Диплом\MAIN CODE\5 Github рабочее\obj\Debug\PowerGridEditor.NodeForm.resources
+D:\НГТУ\Диплом\MAIN CODE\5 Github рабочее\obj\Debug\PowerGridEditor.Properties.Resources.resources
+D:\НГТУ\Диплом\MAIN CODE\5 Github рабочее\obj\Debug\PowerGridEditor.ShuntForm.resources
+D:\НГТУ\Диплом\MAIN CODE\5 Github рабочее\obj\Debug\PowerGridEditor.csproj.GenerateResource.cache
+D:\НГТУ\Диплом\MAIN CODE\5 Github рабочее\obj\Debug\PowerGridEditor.csproj.CoreCompileInputs.cache
+D:\НГТУ\Диплом\MAIN CODE\5 Github рабочее\obj\Debug\PowerGri.81ACA730.Up2Date
+D:\НГТУ\Диплом\MAIN CODE\5 Github рабочее\obj\Debug\PowerGridEditor.exe
+D:\НГТУ\Диплом\MAIN CODE\5 Github рабочее\obj\Debug\PowerGridEditor.pdb
