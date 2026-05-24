@@ -50,6 +50,7 @@ namespace PowerGridEditor
         private readonly ToolTip hoverToolTip = new ToolTip();
         private object hoveredElement;
         private readonly Dictionary<int, double> lastCalculatedNodeVoltages = new Dictionary<int, double>();
+        private readonly Dictionary<int, double> lastCalculatedNodeDuPercents = new Dictionary<int, double>();
         private CheckBox checkBoxShowBranchInfo;
         private bool showBranchCurrentOverlay = true;
         private string lastTooltipText;
@@ -3947,51 +3948,49 @@ namespace PowerGridEditor
 
         private void ApplyNodeVoltageColorsFromNetworkRez(string networkRez)
         {
-            var voltages = ParseNodeVoltagesFromNetworkRez(networkRez);
+            var nodeResults = ParseNodeVoltagesFromNetworkRez(networkRez);
             lastCalculatedNodeVoltages.Clear();
-            foreach (var kv in voltages)
+            lastCalculatedNodeDuPercents.Clear();
+            foreach (var kv in nodeResults)
             {
-                lastCalculatedNodeVoltages[kv.Key] = kv.Value;
+                lastCalculatedNodeVoltages[kv.Key] = kv.Value.Voltage;
+                lastCalculatedNodeDuPercents[kv.Key] = kv.Value.DuPercent;
             }
 
             foreach (var node in graphicElements.OfType<GraphicNode>())
             {
-                if (!voltages.TryGetValue(node.Data.Number, out var uFact))
+                if (!nodeResults.TryGetValue(node.Data.Number, out var nodeResult))
                 {
                     node.Data.CalculatedVoltage = 0;
-                    double uFactTelemetry = node.Data.ActualVoltage > 0 ? node.Data.ActualVoltage : node.Data.InitialVoltage;
-                    node.VoltageColor = GetNodeVoltageColor(uFactTelemetry, node.Data.CalculatedVoltage > 0 ? node.Data.CalculatedVoltage : uFactTelemetry);
+                    node.VoltageColor = GetNodeVoltageColor(node.Data.InitialVoltage, node.Data.ActualVoltage > 0 ? node.Data.ActualVoltage : node.Data.InitialVoltage);
                     continue;
                 }
 
-                node.Data.CalculatedVoltage = uFact;
+                node.Data.CalculatedVoltage = nodeResult.Voltage;
                 if (!IsFactTelemetryEnabled(node.Data))
                 {
                     node.Data.ActualVoltage = node.Data.CalculatedVoltage;
                 }
 
-                double uFactForColor = node.Data.ActualVoltage > 0 ? node.Data.ActualVoltage : uFact;
-                node.VoltageColor = GetNodeVoltageColor(node.Data.InitialVoltage, uFactForColor);
+                node.VoltageColor = GetNodeVoltageColorFromDuPercent(nodeResult.DuPercent);
             }
 
             foreach (var baseNode in graphicElements.OfType<GraphicBaseNode>())
             {
-                if (!voltages.TryGetValue(baseNode.Data.Number, out var uFact))
+                if (!nodeResults.TryGetValue(baseNode.Data.Number, out var nodeResult))
                 {
                     baseNode.Data.CalculatedVoltage = 0;
-                    double uFactTelemetry = baseNode.Data.ActualVoltage > 0 ? baseNode.Data.ActualVoltage : baseNode.Data.InitialVoltage;
-                    baseNode.VoltageColor = GetNodeVoltageColor(uFactTelemetry, baseNode.Data.CalculatedVoltage > 0 ? baseNode.Data.CalculatedVoltage : uFactTelemetry);
+                    baseNode.VoltageColor = GetNodeVoltageColor(baseNode.Data.InitialVoltage, baseNode.Data.ActualVoltage > 0 ? baseNode.Data.ActualVoltage : baseNode.Data.InitialVoltage);
                     continue;
                 }
 
-                baseNode.Data.CalculatedVoltage = uFact;
+                baseNode.Data.CalculatedVoltage = nodeResult.Voltage;
                 if (!IsFactTelemetryEnabled(baseNode.Data))
                 {
                     baseNode.Data.ActualVoltage = baseNode.Data.CalculatedVoltage;
                 }
 
-                double uFactForColor = baseNode.Data.ActualVoltage > 0 ? baseNode.Data.ActualVoltage : uFact;
-                baseNode.VoltageColor = GetNodeVoltageColor(baseNode.Data.InitialVoltage, uFactForColor);
+                baseNode.VoltageColor = GetNodeVoltageColorFromDuPercent(nodeResult.DuPercent);
             }
         }
 
@@ -4011,9 +4010,9 @@ namespace PowerGridEditor
             return modes.TryGetValue("Ufact", out bool enabled) && enabled;
         }
 
-        private Dictionary<int, double> ParseNodeVoltagesFromNetworkRez(string networkRez)
+        private Dictionary<int, (double Voltage, double DuPercent)> ParseNodeVoltagesFromNetworkRez(string networkRez)
         {
-            var result = new Dictionary<int, double>();
+            var result = new Dictionary<int, (double Voltage, double DuPercent)>();
             if (string.IsNullOrWhiteSpace(networkRez))
             {
                 return result;
@@ -4070,9 +4069,16 @@ namespace PowerGridEditor
                         }
 
                         double parsedVoltage = 0;
-                        if (double.TryParse(parts[vColumnIndex], NumberStyles.Float, CultureInfo.InvariantCulture, out parsedVoltage))
+                        if (TryParseResultDouble(parts[vColumnIndex], out parsedVoltage))
                         {
-                            result[parsedNodeNumber] = parsedVoltage;
+                            double parsedDuPercent = 0;
+                            int duColumnIndex = parts.Length - 1;
+                            if (duColumnIndex >= 0 && duColumnIndex < parts.Length)
+                            {
+                                TryParseResultDouble(parts[duColumnIndex], out parsedDuPercent);
+                            }
+
+                            result[parsedNodeNumber] = (parsedVoltage, parsedDuPercent);
                             parsedNewFormat = true;
                             break;
                         }
@@ -4087,18 +4093,57 @@ namespace PowerGridEditor
                 int nodeNumber = 0;
                 if (!int.TryParse(parts[0], out nodeNumber))
                 {
-                    result[parsedNodeNumber] = parsedUFact;
+                    result[parsedNodeNumber] = (parsedUFact, 0);
                     continue;
                 }
 
                 double legacyVoltage = 0;
-                if (double.TryParse(parts[1], NumberStyles.Float, CultureInfo.InvariantCulture, out legacyVoltage))
+                if (TryParseResultDouble(parts[1], out legacyVoltage))
                 {
-                    result[nodeNumber] = legacyVoltage;
+                    result[nodeNumber] = (legacyVoltage, 0);
                 }
             }
 
             return result;
+        }
+
+        private bool TryParseResultDouble(string value, out double parsed)
+        {
+            parsed = 0;
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return false;
+            }
+
+            string normalized = value.Trim().Replace("%", string.Empty);
+            if (double.TryParse(normalized, NumberStyles.Float, CultureInfo.InvariantCulture, out parsed))
+            {
+                return true;
+            }
+
+            if (double.TryParse(normalized, NumberStyles.Float, CultureInfo.GetCultureInfo("ru-RU"), out parsed))
+            {
+                return true;
+            }
+
+            normalized = normalized.Replace(',', '.');
+            return double.TryParse(normalized, NumberStyles.Float, CultureInfo.InvariantCulture, out parsed);
+        }
+
+        private Color GetNodeVoltageColorFromDuPercent(double duPercent)
+        {
+            double absDelta = Math.Abs(duPercent);
+            if (absDelta <= 5.0)
+            {
+                return Color.LightGreen;
+            }
+
+            if (absDelta <= 10.0)
+            {
+                return Color.Yellow;
+            }
+
+            return Color.IndianRed;
         }
 
         private Color GetNodeVoltageColor(double nominalVoltage, double factualVoltage)
@@ -4208,6 +4253,10 @@ namespace PowerGridEditor
             }
 
             double delta = uNom > 0 ? CalculateVoltageDeviationPercent(uNom, uFact) : 0;
+            if (lastCalculatedNodeDuPercents.TryGetValue(nodeNumber, out var parsedDuPercent))
+            {
+                delta = parsedDuPercent;
+            }
             string calcText = calculatedU > 0 ? $"{calculatedU:F2} кВ" : "нет данных";
             return $"{(isBaseNode ? "Базисный узел" : "Узел")} {nodeNumber}\n" +
                    $"Номинальное напряжение={uNom:F2} кВ\n" +
