@@ -4068,10 +4068,9 @@ namespace PowerGridEditor
                             continue;
                         }
 
-                        double parsedUFact = 0;
-                        if (double.TryParse(parts[vColumnIndex], NumberStyles.Float, CultureInfo.InvariantCulture, out parsedUFact))
+                        if (double.TryParse(parts[vColumnIndex], NumberStyles.Float, CultureInfo.InvariantCulture, out double parsedVoltage))
                         {
-                            result[parsedNodeNumber] = parsedUFact;
+                            result[parsedNodeNumber] = parsedVoltage;
                             parsedNewFormat = true;
                             break;
                         }
