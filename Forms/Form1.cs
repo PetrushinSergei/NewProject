@@ -4053,7 +4053,37 @@ namespace PowerGridEditor
                 // Новый формат: "ТИП N U_ном ... V Delta dU,%", где V = parts[Length-3].
                 // Прежний формат: "ТИП N U_ном ... V Delta", где V = parts[Length-2].
                 // Старый формат: "N V".
-                if (parts.Length >= 12 && int.TryParse(parts[1], out int parsedNodeNumber))
+                int parsedNodeNumber;
+                if (parts.Length >= 12 && int.TryParse(parts[1], out parsedNodeNumber))
+                {
+                    int[] vColumnCandidates = parts.Length >= 13
+                        ? new[] { parts.Length - 3, parts.Length - 2 }
+                        : new[] { parts.Length - 2 };
+                    bool parsedNewFormat = false;
+
+                    foreach (int vColumnIndex in vColumnCandidates)
+                    {
+                        if (vColumnIndex < 0 || vColumnIndex >= parts.Length)
+                        {
+                            continue;
+                        }
+
+                        double parsedUFact;
+                        if (double.TryParse(parts[vColumnIndex], NumberStyles.Float, CultureInfo.InvariantCulture, out parsedUFact))
+                        {
+                            result[parsedNodeNumber] = parsedUFact;
+                            parsedNewFormat = true;
+                            break;
+                        }
+                    }
+
+                    if (parsedNewFormat)
+                    {
+                        continue;
+                    }
+                }
+
+                if (!int.TryParse(parts[0], out int nodeNumber))
                 {
                     int[] vColumnCandidates = parts.Length >= 13
                         ? new[] { parts.Length - 3, parts.Length - 2 }
