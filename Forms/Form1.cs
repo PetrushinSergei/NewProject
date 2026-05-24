@@ -4090,10 +4090,10 @@ namespace PowerGridEditor
                     continue;
                 }
 
-                double uFact = 0;
-                if (double.TryParse(parts[1], NumberStyles.Float, CultureInfo.InvariantCulture, out uFact))
+                double legacyVoltage = 0;
+                if (double.TryParse(parts[1], NumberStyles.Float, CultureInfo.InvariantCulture, out legacyVoltage))
                 {
-                    result[nodeNumber] = uFact;
+                    result[nodeNumber] = legacyVoltage;
                 }
             }
 
