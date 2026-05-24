@@ -529,7 +529,7 @@ namespace PowerGridEditor
 
             net2.AppendLine("               Результаты расчета по узлам");
             // Заголовок таблицы с новым жестко заданным порядком колонок
-            net2.AppendLine("  ТИП      N    U_ном      P_н      Q_н      P_г      Q_г     V_зд    Q_min    Q_max        V    Delta");
+            net2.AppendLine("  ТИП      N    U_ном      P_н      Q_н      P_г      Q_г     V_зд    Q_min    Q_max        V    Delta     dU,%");
 
             double sp = 0, sq = 0, spg = 0, sqb = 0, dPsum = 0;
 
@@ -547,6 +547,7 @@ namespace PowerGridEditor
                 double qb = -mv * b[i];
                 sp += p[i]; sq += q[i]; spg += pg; sqb += qb;
                 mv = Math.Sqrt(mv);
+                double duPercent = unom_orig[i] != 0.0 ? ((mv - unom_orig[i]) / unom_orig[i]) * 100.0 : 0.0;
 
                 double pLoad = Math.Abs(p0[i]);
                 double qLoad = Math.Abs(q0[i]);
@@ -568,11 +569,11 @@ namespace PowerGridEditor
                 else if (nk[i] == 2) typeStr = "Ген";
 
                 // Выводим строку в строго заданном порядке столбцов с выравниванием по ширине заголовков
-                net2.AppendLine($"{typeStr,5}{nn[i],7}{unom_orig[i],9:F2}{pLoad,9:F2}{qLoad,9:F2}{pGen,9:F2}{qGen,9:F2}{v_zd[i],9:F2}{q_min[i],9:F2}{q_max[i],9:F2}{F2(mv),9}{dv,9:F2}");
+                net2.AppendLine($"{typeStr,5}{nn[i],7}{unom_orig[i],9:F2}{pLoad,9:F2}{qLoad,9:F2}{pGen,9:F2}{qGen,9:F2}{v_zd[i],9:F2}{q_min[i],9:F2}{q_max[i],9:F2}{F2(mv),9}{dv,9:F2}{duPercent,9:F2}");
             }
 
             // Увеличена длина разделителя, так как таблица стала шире
-            net2.AppendLine("---------------------------------------------------------------------------------------------------------");
+            net2.AppendLine("------------------------------------------------------------------------------------------------------------------");
             net2.AppendLine($"Баланс пассивных элементов {F2(sp),10}{F2(sq),10}{F2(spg),10}{F2(sqb),10}");
             net2.AppendLine("                         + потребление, - генерация ");
             net2.AppendLine();

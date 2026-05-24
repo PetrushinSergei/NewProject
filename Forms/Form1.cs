@@ -4050,12 +4050,47 @@ namespace PowerGridEditor
                     continue;
                 }
 
-                if (!int.TryParse(parts[0], out var nodeNumber))
+                // Новый формат: "ТИП N U_ном ... V Delta dU,%", где V = parts[Length-3].
+                // Прежний формат: "ТИП N U_ном ... V Delta", где V = parts[Length-2].
+                // Старый формат: "N V".
+                int parsedNodeNumber = 0;
+                if (parts.Length >= 12 && int.TryParse(parts[1], out parsedNodeNumber))
+                {
+                    int[] vColumnCandidates = parts.Length >= 13
+                        ? new[] { parts.Length - 3, parts.Length - 2 }
+                        : new[] { parts.Length - 2 };
+                    bool parsedNewFormat = false;
+
+                    foreach (int vColumnIndex in vColumnCandidates)
+                    {
+                        if (vColumnIndex < 0 || vColumnIndex >= parts.Length)
+                        {
+                            continue;
+                        }
+
+                        double parsedVoltage = 0;
+                        if (double.TryParse(parts[vColumnIndex], NumberStyles.Float, CultureInfo.InvariantCulture, out parsedVoltage))
+                        {
+                            result[parsedNodeNumber] = parsedVoltage;
+                            parsedNewFormat = true;
+                            break;
+                        }
+                    }
+
+                    if (parsedNewFormat)
+                    {
+                        continue;
+                    }
+                }
+
+                int nodeNumber = 0;
+                if (!int.TryParse(parts[0], out nodeNumber))
                 {
                     continue;
                 }
 
-                if (double.TryParse(parts[1], NumberStyles.Float, CultureInfo.InvariantCulture, out var uFact))
+                double uFact = 0;
+                if (double.TryParse(parts[1], NumberStyles.Float, CultureInfo.InvariantCulture, out uFact))
                 {
                     result[nodeNumber] = uFact;
                 }
