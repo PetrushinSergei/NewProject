@@ -532,6 +532,7 @@ namespace PowerGridEditor
             net2.AppendLine("  ТИП      N    U_ном      P_н      Q_н      P_г      Q_г     V_зд    Q_min    Q_max        V    Delta     dU,%");
 
             double sp = 0, sq = 0, spg = 0, sqb = 0, dPsum = 0;
+            var deltaByNodeIndex = new double[n + 1];
 
             var saldo = new double[2, 10];
             var sumpot = new double[10];
@@ -543,6 +544,7 @@ namespace PowerGridEditor
             {
                 double mv = va[i] * va[i] + vr[i] * vr[i];
                 double dv = Math.Atan2(vr[i], va[i]) * 57.295779515;
+                deltaByNodeIndex[i] = dv;
                 double pg = mv * g[i];
                 double qb = -mv * b[i];
                 sp += p[i]; sq += q[i]; spg += pg; sqb += qb;
@@ -578,7 +580,7 @@ namespace PowerGridEditor
             net2.AppendLine("                         + потребление, - генерация ");
             net2.AppendLine();
             net2.AppendLine("                           Результаты расчета по ветвям");
-            net2.AppendLine(" N_нач N_кон      R       X       B    P_нач    Q_нач    P_кон    Q_кон    I_нач    I_кон      dP      dQ      Iдоп    Загр,%");
+            net2.AppendLine(" N_нач N_кон      R       X       B    P_нач    Q_нач    P_кон    Q_кон    I_нач    I_кон      dP      dQ      Iдоп     Dнач     Dкон   dDelta");
 
             for (int j = 1; j <= m; j++)
             {
@@ -612,8 +614,9 @@ namespace PowerGridEditor
                 double s2_MVA = Math.Sqrt(p21 * p21 + q21 * q21);
                 double iStartAmperes = v1_kV > 0.0 ? (s1_MVA * 1000.0) / (Math.Sqrt(3.0) * v1_kV) : 0.0;
                 double iEndAmperes = v2_kV > 0.0 ? (s2_MVA * 1000.0) / (Math.Sqrt(3.0) * v2_kV) : 0.0;
-                double iFactMax = Math.Max(iStartAmperes, iEndAmperes);
-                double loadingPercent = permissibleCurrentByBranch[j] > 0.0 ? (iFactMax / permissibleCurrentByBranch[j]) * 100.0 : 0.0;
+                double deltaStart = deltaByNodeIndex[i1];
+                double deltaEnd = deltaByNodeIndex[i2];
+                double deltaDifference = deltaStart - deltaEnd;
 
                 tokRows.Add(new TokRow { Start = i1, End = i2, Ia = RoundFromFlex(i1a, 4), Ir = RoundFromFlex(i1r, 4), R = RoundFromFlex(Math.Abs(r[j]), 3) });
 
@@ -628,7 +631,8 @@ namespace PowerGridEditor
               $"{nn[i1],6}{nn[i2],6}" +
               $"{r[j],8:F2}{x[j],8:F2}{-by[j] * 1000000,8:F2}" +
               $"{pStart,9:F0}{qStart,9:F0}{pEnd,9:F0}{qEnd,9:F0}{iStartRounded,9:F0}{iEndRounded,9:F0}" +
-              $"{dpl,10:F2}{dql,10:F2}{permissibleCurrentByBranch[j],10:F2}{loadingPercent,10:F2}");
+              $"{dpl,10:F2}{dql,10:F2}{permissibleCurrentByBranch[j],10:F2}" +
+              $"{deltaStart,9:F2}{deltaEnd,9:F2}{deltaDifference,9:F2}");
 
                 int rk = nn[i1] / kkk; while (rk > 9) rk /= kk;
                 int r2 = nn[i2] / kkk; while (r2 > 9) r2 /= kk;

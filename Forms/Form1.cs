@@ -43,6 +43,7 @@ namespace PowerGridEditor
         private Button buttonOpenClientSettingsForm;
         private TelemetryEditorForm telemetryEditorForm;
         private ClientSettingsForm clientSettingsForm;
+        private BurdeningForm burdeningForm;
         private Point rightMouseDownPoint;
         private bool rightMouseMoved;
         private bool hasConvergenceStatus;
@@ -3151,6 +3152,31 @@ namespace PowerGridEditor
             return new Point(x, y);
         }
 
+        private void openBurdeningFormButton_Click(object sender, EventArgs e)
+        {
+            if (burdeningForm != null && !burdeningForm.IsDisposed)
+            {
+                if (!burdeningForm.Visible)
+                {
+                    burdeningForm.Show(this);
+                }
+                if (burdeningForm.WindowState == FormWindowState.Minimized)
+                {
+                    burdeningForm.WindowState = FormWindowState.Normal;
+                }
+                burdeningForm.BringToFront();
+                burdeningForm.Focus();
+                return;
+            }
+
+            burdeningForm = new BurdeningForm(graphicElements.OfType<GraphicNode>());
+            RegisterOpenedWindow(burdeningForm);
+            burdeningForm.StartPosition = FormStartPosition.Manual;
+            burdeningForm.Location = GetNextChildWindowLocation();
+            burdeningForm.FormClosed += (s, args) => burdeningForm = null;
+            burdeningForm.Show(this);
+        }
+
         private void buttonOpenReport_Click(object sender, EventArgs e)
         {
             if ((DateTime.UtcNow - lastCalcDoubleClickAt).TotalMilliseconds < 350)
@@ -4479,6 +4505,7 @@ namespace PowerGridEditor
         private void ConfigureToolbarStyle()
         {
             panel1.Padding = new Padding(8);
+            panel1.Height = 132;
             panel1.BackColor = ThemePanelBackground;
             foreach (Control ctrl in panel1.Controls)
             {
@@ -4518,6 +4545,13 @@ namespace PowerGridEditor
             {
                 button.Location = new Point(x2, 52);
                 x2 += button.Width + 8;
+            }
+
+            var openBurdeningFormButton = panel1.Controls.Find("buttonOpenBurdeningForm", false).FirstOrDefault() as Button;
+            if (openBurdeningFormButton != null)
+            {
+                openBurdeningFormButton.Size = new Size(186, 34);
+                openBurdeningFormButton.Location = new Point(12, 92);
             }
         }
 
