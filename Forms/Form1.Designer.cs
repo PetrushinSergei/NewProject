@@ -28,6 +28,7 @@
             this.textBoxStaticIp = new System.Windows.Forms.TextBox();
             this.comboBoxAdapters = new System.Windows.Forms.ComboBox();
             this.buttonImportData = new System.Windows.Forms.Button();
+            this.buttonGroupBurdening = new System.Windows.Forms.Button();
             this.buttonOpenReport = new System.Windows.Forms.Button();
             this.buttonExportData = new System.Windows.Forms.Button();
             this.buttonClearAll = new System.Windows.Forms.Button();
@@ -58,6 +59,7 @@
             this.panel1.Controls.Add(this.textBoxStaticIp);
             this.panel1.Controls.Add(this.comboBoxAdapters);
             this.panel1.Controls.Add(this.buttonImportData);
+            this.panel1.Controls.Add(this.buttonGroupBurdening);
             this.panel1.Controls.Add(this.buttonOpenReport);
             this.panel1.Controls.Add(this.buttonExportData);
             this.panel1.Controls.Add(this.buttonClearAll);
@@ -69,7 +71,7 @@
             this.panel1.Dock = System.Windows.Forms.DockStyle.Top;
             this.panel1.Location = new System.Drawing.Point(0, 0);
             this.panel1.Name = "panel1";
-            this.panel1.Size = new System.Drawing.Size(1500, 92);
+            this.panel1.Size = new System.Drawing.Size(1500, 132);
             this.panel1.TabIndex = 0;
             // 
             // labelTopClock
@@ -183,6 +185,18 @@
             this.buttonImportData.Text = "Импорт";
             this.buttonImportData.UseVisualStyleBackColor = true;
             this.buttonImportData.Click += new System.EventHandler(this.buttonImportData_Click);
+            //
+            // buttonGroupBurdening
+            //
+            this.buttonGroupBurdening.FlatAppearance.BorderSize = 2;
+            this.buttonGroupBurdening.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.buttonGroupBurdening.Location = new System.Drawing.Point(12, 92);
+            this.buttonGroupBurdening.Name = "buttonGroupBurdening";
+            this.buttonGroupBurdening.Size = new System.Drawing.Size(186, 30);
+            this.buttonGroupBurdening.TabIndex = 19;
+            this.buttonGroupBurdening.Text = "Утяжеление";
+            this.buttonGroupBurdening.UseVisualStyleBackColor = true;
+            this.buttonGroupBurdening.Click += new System.EventHandler(this.buttonOpenBurdening_Click);
             // 
             // buttonOpenReport
             // 
@@ -284,9 +298,9 @@
             // 
             this.panel2.BackColor = System.Drawing.SystemColors.ControlLightLight;
             this.panel2.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.panel2.Location = new System.Drawing.Point(0, 92);
+            this.panel2.Location = new System.Drawing.Point(0, 132);
             this.panel2.Name = "panel2";
-            this.panel2.Size = new System.Drawing.Size(1500, 547);
+            this.panel2.Size = new System.Drawing.Size(1500, 507);
             this.panel2.TabIndex = 1;
             // 
             // statusStrip1
@@ -339,6 +353,7 @@
         private System.Windows.Forms.Button buttonAddBaseNode;
         private System.Windows.Forms.Button buttonExportData;
         private System.Windows.Forms.Button buttonImportData;
+        private System.Windows.Forms.Button buttonGroupBurdening;
         private System.Windows.Forms.Button buttonOpenReport;
         private System.Windows.Forms.ComboBox comboBoxAdapters;
         private System.Windows.Forms.TextBox textBoxStaticIp;
