@@ -9,9 +9,6 @@ namespace PowerGridEditor
 {
     public sealed class GroupBurdeningForm : Form
     {
-        private const string DialogTitle = "Утяжеление";
-
-        private readonly CheckBox checkSelectAll;
         private readonly DataGridView nodesGrid;
         private readonly TextBox textIntervalSeconds;
         private readonly ComboBox comboStepType;
@@ -19,31 +16,13 @@ namespace PowerGridEditor
         private readonly Button buttonStart;
         private readonly Button buttonStop;
         private readonly Timer burdeningTimer;
-        private bool updatingSelectAll;
 
         public GroupBurdeningForm(IEnumerable<GraphicNode> nodes)
         {
-            Text = DialogTitle;
+            Text = "Групповое утяжеление";
             StartPosition = FormStartPosition.CenterParent;
-            MinimumSize = new Size(820, 420);
-            Size = new Size(920, 520);
-
-            checkSelectAll = new CheckBox
-            {
-                AutoSize = true,
-                Text = "Выбрать все",
-                Margin = new Padding(10, 8, 0, 6)
-            };
-            checkSelectAll.CheckedChanged += checkSelectAll_CheckedChanged;
-
-            var topPanel = new FlowLayoutPanel
-            {
-                Dock = DockStyle.Top,
-                Height = 36,
-                FlowDirection = FlowDirection.LeftToRight,
-                WrapContents = false
-            };
-            topPanel.Controls.Add(checkSelectAll);
+            MinimumSize = new Size(760, 420);
+            Size = new Size(860, 520);
 
             nodesGrid = new DataGridView
             {
@@ -64,7 +43,6 @@ namespace PowerGridEditor
                     nodesGrid.CommitEdit(DataGridViewDataErrorContexts.Commit);
                 }
             };
-            nodesGrid.CellValueChanged += nodesGrid_CellValueChanged;
 
             nodesGrid.Columns.Add(new DataGridViewCheckBoxColumn
             {
@@ -100,31 +78,43 @@ namespace PowerGridEditor
                 FillWeight = 70
             });
 
-            var controlsPanel = new FlowLayoutPanel
+            var controlsPanel = new TableLayoutPanel
             {
                 Dock = DockStyle.Bottom,
-                Height = 58,
-                Padding = new Padding(10, 12, 10, 10),
-                FlowDirection = FlowDirection.LeftToRight,
-                WrapContents = false
+                Height = 78,
+                Padding = new Padding(10, 8, 10, 8),
+                ColumnCount = 10,
+                RowCount = 2
             };
+            controlsPanel.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+            controlsPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 95));
+            controlsPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 20));
+            controlsPanel.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+            controlsPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 95));
+            controlsPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 20));
+            controlsPanel.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+            controlsPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 110));
+            controlsPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 100));
+            controlsPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 100));
+            controlsPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+            controlsPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 1));
 
-            textIntervalSeconds = new TextBox { Text = "1", Width = 80, Height = 24, Margin = new Padding(6, 0, 18, 0) };
-            comboStepType = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Width = 80, Height = 24, Margin = new Padding(6, 0, 18, 0) };
+            textIntervalSeconds = new TextBox { Dock = DockStyle.Fill, Text = "1" };
+            comboStepType = new ComboBox { Dock = DockStyle.Fill, DropDownStyle = ComboBoxStyle.DropDownList };
             comboStepType.Items.AddRange(new object[] { "МВт", "%" });
             comboStepType.SelectedIndex = 0;
-            textStepValue = new TextBox { Text = "1", Width = 90, Height = 24, Margin = new Padding(6, 0, 18, 0) };
-            buttonStart = new Button { Text = "Старт", Width = 90, Height = 28, Margin = new Padding(0, 0, 8, 0) };
-            buttonStop = new Button { Text = "Стоп", Width = 90, Height = 28, Margin = new Padding(0), Enabled = false };
+            textStepValue = new TextBox { Dock = DockStyle.Fill, Text = "1" };
+            buttonStart = new Button { Dock = DockStyle.Fill, Text = "Старт" };
+            buttonStop = new Button { Dock = DockStyle.Fill, Text = "Стоп", Enabled = false };
 
-            controlsPanel.Controls.Add(CreateControlLabel("Интервал (сек)"));
-            controlsPanel.Controls.Add(textIntervalSeconds);
-            controlsPanel.Controls.Add(CreateControlLabel("Тип шага"));
-            controlsPanel.Controls.Add(comboStepType);
-            controlsPanel.Controls.Add(CreateControlLabel("Величина шага"));
-            controlsPanel.Controls.Add(textStepValue);
-            controlsPanel.Controls.Add(buttonStart);
-            controlsPanel.Controls.Add(buttonStop);
+            controlsPanel.Controls.Add(CreateControlLabel("Интервал (сек)"), 0, 0);
+            controlsPanel.Controls.Add(textIntervalSeconds, 1, 0);
+            controlsPanel.Controls.Add(CreateControlLabel("Тип шага"), 3, 0);
+            controlsPanel.Controls.Add(comboStepType, 4, 0);
+            controlsPanel.Controls.Add(CreateControlLabel("Величина шага"), 6, 0);
+            controlsPanel.Controls.Add(textStepValue, 7, 0);
+            controlsPanel.Controls.Add(buttonStart, 8, 0);
+            controlsPanel.Controls.Add(buttonStop, 9, 0);
 
             buttonStart.Click += buttonStart_Click;
             buttonStop.Click += (s, e) => StopBurdeningTimer();
@@ -134,8 +124,7 @@ namespace PowerGridEditor
 
             Controls.Add(nodesGrid);
             Controls.Add(controlsPanel);
-            Controls.Add(topPanel);
-            FormClosing += GroupBurdeningForm_FormClosing;
+            FormClosing += (s, e) => StopBurdeningTimer();
 
             RefreshNodes(nodes);
         }
@@ -145,7 +134,6 @@ namespace PowerGridEditor
             nodesGrid.Rows.Clear();
             if (nodes == null)
             {
-                UpdateSelectAllState();
                 return;
             }
 
@@ -157,10 +145,8 @@ namespace PowerGridEditor
                     FormatLoadValue(node.Data.NominalActivePower),
                     FormatLoadValue(node.Data.NominalReactivePower),
                     false);
-                nodesGrid.Rows[rowIndex].Tag = new BurdeningRowState(node);
+                nodesGrid.Rows[rowIndex].Tag = node;
             }
-
-            UpdateSelectAllState();
         }
 
         private static Label CreateControlLabel(string text)
@@ -168,63 +154,10 @@ namespace PowerGridEditor
             return new Label
             {
                 AutoSize = true,
+                Dock = DockStyle.Fill,
                 Text = text,
-                TextAlign = ContentAlignment.MiddleLeft,
-                Margin = new Padding(0, 4, 0, 0)
+                TextAlign = ContentAlignment.MiddleLeft
             };
-        }
-
-        private void checkSelectAll_CheckedChanged(object sender, EventArgs e)
-        {
-            if (updatingSelectAll)
-            {
-                return;
-            }
-
-            updatingSelectAll = true;
-            try
-            {
-                foreach (DataGridViewRow row in nodesGrid.Rows)
-                {
-                    row.Cells["SelectColumn"].Value = checkSelectAll.Checked;
-                }
-            }
-            finally
-            {
-                updatingSelectAll = false;
-            }
-        }
-
-        private void nodesGrid_CellValueChanged(object sender, DataGridViewCellEventArgs e)
-        {
-            if (e.RowIndex < 0 || e.ColumnIndex < 0)
-            {
-                return;
-            }
-
-            if (nodesGrid.Columns[e.ColumnIndex].Name == "SelectColumn")
-            {
-                UpdateSelectAllState();
-            }
-        }
-
-        private void UpdateSelectAllState()
-        {
-            if (updatingSelectAll)
-            {
-                return;
-            }
-
-            updatingSelectAll = true;
-            try
-            {
-                checkSelectAll.Checked = nodesGrid.Rows.Count > 0
-                    && nodesGrid.Rows.Cast<DataGridViewRow>().All(IsRowSelected);
-            }
-            finally
-            {
-                updatingSelectAll = false;
-            }
         }
 
         private void buttonStart_Click(object sender, EventArgs e)
@@ -262,13 +195,11 @@ namespace PowerGridEditor
             bool usePercent = Convert.ToString(comboStepType.SelectedItem, CultureInfo.InvariantCulture) == "%";
             foreach (DataGridViewRow row in nodesGrid.Rows)
             {
-                var rowState = row.Tag as BurdeningRowState;
-                if (!IsRowSelected(row) || rowState == null)
+                if (!IsRowSelected(row) || !(row.Tag is GraphicNode node))
                 {
                     continue;
                 }
 
-                var node = rowState.Node;
                 double currentLoad = node.Data.NominalActivePower;
                 double newLoad = usePercent
                     ? currentLoad + currentLoad * stepValue / 100.0
@@ -276,13 +207,6 @@ namespace PowerGridEditor
 
                 node.Data.NominalActivePower = newLoad;
                 row.Cells["LoadPColumn"].Value = FormatLoadValue(newLoad);
-
-                if (IsTgEnabled(row) && Math.Abs(rowState.InitialP) > 1e-9)
-                {
-                    double newReactiveLoad = newLoad * (rowState.InitialQ / rowState.InitialP);
-                    node.Data.NominalReactivePower = newReactiveLoad;
-                    row.Cells["LoadQColumn"].Value = FormatLoadValue(newReactiveLoad);
-                }
             }
         }
 
@@ -293,13 +217,13 @@ namespace PowerGridEditor
 
             if (!TryParsePositiveDouble(textIntervalSeconds.Text, out double intervalSeconds))
             {
-                MessageBox.Show(this, "Введите положительное значение в поле \"Интервал (сек)\".", DialogTitle, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show(this, "Введите положительное значение в поле \"Интервал (сек)\".", "Групповое утяжеление", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return false;
             }
 
             if (!TryParseDouble(textStepValue.Text, out stepValue))
             {
-                MessageBox.Show(this, "Введите числовое значение в поле \"Величина шага\".", DialogTitle, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show(this, "Введите числовое значение в поле \"Величина шага\".", "Групповое утяжеление", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return false;
             }
 
@@ -307,28 +231,10 @@ namespace PowerGridEditor
             return true;
         }
 
-        private void GroupBurdeningForm_FormClosing(object sender, FormClosingEventArgs e)
-        {
-            if (e.CloseReason != CloseReason.UserClosing)
-            {
-                return;
-            }
-
-            e.Cancel = true;
-            Hide();
-        }
-
         private static bool IsRowSelected(DataGridViewRow row)
         {
             return row != null
                 && row.Cells["SelectColumn"].Value is bool selected
-                && selected;
-        }
-
-        private static bool IsTgEnabled(DataGridViewRow row)
-        {
-            return row != null
-                && row.Cells["TgColumn"].Value is bool selected
                 && selected;
         }
 
@@ -353,20 +259,6 @@ namespace PowerGridEditor
             return node != null
                 && node.Data != null
                 && Math.Abs(node.Data.FixedVoltageModule) < 1e-9;
-        }
-
-        private sealed class BurdeningRowState
-        {
-            public BurdeningRowState(GraphicNode node)
-            {
-                Node = node;
-                InitialP = node.Data.NominalActivePower;
-                InitialQ = node.Data.NominalReactivePower;
-            }
-
-            public GraphicNode Node { get; }
-            public double InitialP { get; }
-            public double InitialQ { get; }
         }
     }
 }

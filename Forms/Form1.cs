@@ -43,7 +43,7 @@ namespace PowerGridEditor
         private Button buttonOpenClientSettingsForm;
         private TelemetryEditorForm telemetryEditorForm;
         private ClientSettingsForm clientSettingsForm;
-        private BurdeningForm burdeningForm;
+        private GroupBurdeningForm groupBurdeningForm;
         private Point rightMouseDownPoint;
         private bool rightMouseMoved;
         private bool hasConvergenceStatus;
@@ -3152,106 +3152,6 @@ namespace PowerGridEditor
             return new Point(x, y);
         }
 
-        private void openBurdeningFormButton_Click(object sender, EventArgs e)
-        {
-            if (burdeningForm != null && !burdeningForm.IsDisposed)
-            {
-                if (!burdeningForm.Visible)
-                {
-                    burdeningForm.Show(this);
-                }
-                if (burdeningForm.WindowState == FormWindowState.Minimized)
-                {
-                    burdeningForm.WindowState = FormWindowState.Normal;
-                }
-                burdeningForm.BringToFront();
-                burdeningForm.Focus();
-                return;
-            }
-
-            burdeningForm = new BurdeningForm(graphicElements.OfType<GraphicNode>());
-            RegisterOpenedWindow(burdeningForm);
-            burdeningForm.StartPosition = FormStartPosition.Manual;
-            burdeningForm.Location = GetNextChildWindowLocation();
-            burdeningForm.FormClosed += (s, args) => burdeningForm = null;
-            burdeningForm.Show(this);
-        }
-
-        private void buttonBurdening_Click(object sender, EventArgs e)
-        {
-            if (burdeningForm != null && !burdeningForm.IsDisposed)
-            {
-                if (!burdeningForm.Visible)
-                {
-                    burdeningForm.Show(this);
-                }
-                if (burdeningForm.WindowState == FormWindowState.Minimized)
-                {
-                    burdeningForm.WindowState = FormWindowState.Normal;
-                }
-                burdeningForm.BringToFront();
-                burdeningForm.Focus();
-                return;
-            }
-
-            burdeningForm = new BurdeningForm(graphicElements.OfType<GraphicNode>());
-            RegisterOpenedWindow(burdeningForm);
-            burdeningForm.StartPosition = FormStartPosition.Manual;
-            burdeningForm.Location = GetNextChildWindowLocation();
-            burdeningForm.FormClosed += (s, args) => burdeningForm = null;
-            burdeningForm.Show(this);
-        }
-
-        private void buttonOpenBurdening_Click(object sender, EventArgs e)
-        {
-            if (groupBurdeningForm != null && !groupBurdeningForm.IsDisposed)
-            {
-                if (!groupBurdeningForm.Visible)
-                {
-                    groupBurdeningForm.Show(this);
-                }
-                if (groupBurdeningForm.WindowState == FormWindowState.Minimized)
-                {
-                    groupBurdeningForm.WindowState = FormWindowState.Normal;
-                }
-                groupBurdeningForm.BringToFront();
-                groupBurdeningForm.Focus();
-                return;
-            }
-
-            groupBurdeningForm = new GroupBurdeningForm(graphicElements.OfType<GraphicNode>());
-            RegisterOpenedWindow(groupBurdeningForm);
-            groupBurdeningForm.StartPosition = FormStartPosition.Manual;
-            groupBurdeningForm.Location = GetNextChildWindowLocation();
-            groupBurdeningForm.FormClosed += (s, args) => groupBurdeningForm = null;
-            groupBurdeningForm.Show(this);
-        }
-
-        private void buttonGroupBurdening_Click(object sender, EventArgs e)
-        {
-            if (groupBurdeningForm != null && !groupBurdeningForm.IsDisposed)
-            {
-                if (!groupBurdeningForm.Visible)
-                {
-                    groupBurdeningForm.Show(this);
-                }
-                if (groupBurdeningForm.WindowState == FormWindowState.Minimized)
-                {
-                    groupBurdeningForm.WindowState = FormWindowState.Normal;
-                }
-                groupBurdeningForm.BringToFront();
-                groupBurdeningForm.Focus();
-                return;
-            }
-
-            groupBurdeningForm = new GroupBurdeningForm(graphicElements.OfType<GraphicNode>());
-            RegisterOpenedWindow(groupBurdeningForm);
-            groupBurdeningForm.StartPosition = FormStartPosition.Manual;
-            groupBurdeningForm.Location = GetNextChildWindowLocation();
-            groupBurdeningForm.FormClosed += (s, args) => groupBurdeningForm = null;
-            groupBurdeningForm.Show(this);
-        }
-
         private void buttonGroupBurdening_Click(object sender, EventArgs e)
         {
             if (groupBurdeningForm != null && !groupBurdeningForm.IsDisposed)
@@ -4649,11 +4549,11 @@ namespace PowerGridEditor
                 x2 += button.Width + 8;
             }
 
-            var openBurdeningFormButton = panel1.Controls.Find("buttonOpenBurdeningForm", false).FirstOrDefault() as Button;
-            if (openBurdeningFormButton != null)
+            var groupBurdeningButton = panel1.Controls.Find("buttonGroupBurdening", false).FirstOrDefault() as Button;
+            if (groupBurdeningButton != null)
             {
-                openBurdeningFormButton.Size = new Size(186, 34);
-                openBurdeningFormButton.Location = new Point(12, 92);
+                groupBurdeningButton.Size = new Size(186, 34);
+                groupBurdeningButton.Location = new Point(12, 92);
             }
         }
 

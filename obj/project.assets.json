@@ -112,11 +112,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "D:\\НГТУ\\Диплом\\MAIN CODE\\5 Github рабочее\\PowerGridEditor.csproj",
+      "projectUniqueName": "D:\\НГТУ\\Диплом\\MAIN CODE\\Новый функционал\\PowerGridEditor.csproj",
       "projectName": "PowerGridEditor",
-      "projectPath": "D:\\НГТУ\\Диплом\\MAIN CODE\\5 Github рабочее\\PowerGridEditor.csproj",
+      "projectPath": "D:\\НГТУ\\Диплом\\MAIN CODE\\Новый функционал\\PowerGridEditor.csproj",
       "packagesPath": "C:\\Users\\Петрушин Сергей\\.nuget\\packages\\",
-      "outputPath": "D:\\НГТУ\\Диплом\\MAIN CODE\\5 Github рабочее\\obj\\",
+      "outputPath": "D:\\НГТУ\\Диплом\\MAIN CODE\\Новый функционал\\obj\\",
       "projectStyle": "PackageReference",
       "skipContentFileWrite": true,
       "UsingMicrosoftNETSdk": false,
