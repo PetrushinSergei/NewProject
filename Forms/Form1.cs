@@ -3177,6 +3177,108 @@ namespace PowerGridEditor
             burdeningForm.Show(this);
         }
 
+        private void buttonBurdening_Click(object sender, EventArgs e)
+        {
+            if (burdeningForm != null && !burdeningForm.IsDisposed)
+            {
+                if (!burdeningForm.Visible)
+                {
+                    burdeningForm.Show(this);
+                }
+                if (burdeningForm.WindowState == FormWindowState.Minimized)
+                {
+                    burdeningForm.WindowState = FormWindowState.Normal;
+                }
+                burdeningForm.BringToFront();
+                burdeningForm.Focus();
+                return;
+            }
+
+            burdeningForm = new BurdeningForm(graphicElements.OfType<GraphicNode>());
+            RegisterOpenedWindow(burdeningForm);
+            burdeningForm.StartPosition = FormStartPosition.Manual;
+            burdeningForm.Location = GetNextChildWindowLocation();
+            burdeningForm.FormClosed += (s, args) => burdeningForm = null;
+            burdeningForm.Show(this);
+        }
+
+        private void buttonOpenBurdening_Click(object sender, EventArgs e)
+        {
+            if (groupBurdeningForm != null && !groupBurdeningForm.IsDisposed)
+            {
+                if (!groupBurdeningForm.Visible)
+                {
+                    groupBurdeningForm.Show(this);
+                }
+                if (groupBurdeningForm.WindowState == FormWindowState.Minimized)
+                {
+                    groupBurdeningForm.WindowState = FormWindowState.Normal;
+                }
+                groupBurdeningForm.BringToFront();
+                groupBurdeningForm.Focus();
+                return;
+            }
+
+            groupBurdeningForm = new GroupBurdeningForm(graphicElements.OfType<GraphicNode>());
+            RegisterOpenedWindow(groupBurdeningForm);
+            groupBurdeningForm.StartPosition = FormStartPosition.Manual;
+            groupBurdeningForm.Location = GetNextChildWindowLocation();
+            groupBurdeningForm.FormClosed += (s, args) => groupBurdeningForm = null;
+            groupBurdeningForm.Show(this);
+        }
+
+        private void buttonGroupBurdening_Click(object sender, EventArgs e)
+        {
+            if (groupBurdeningForm != null && !groupBurdeningForm.IsDisposed)
+            {
+                if (!groupBurdeningForm.Visible)
+                {
+                    groupBurdeningForm.Show(this);
+                }
+                if (groupBurdeningForm.WindowState == FormWindowState.Minimized)
+                {
+                    groupBurdeningForm.WindowState = FormWindowState.Normal;
+                }
+                groupBurdeningForm.BringToFront();
+                groupBurdeningForm.Focus();
+                return;
+            }
+
+            groupBurdeningForm = new GroupBurdeningForm(graphicElements.OfType<GraphicNode>());
+            RegisterOpenedWindow(groupBurdeningForm);
+            groupBurdeningForm.StartPosition = FormStartPosition.Manual;
+            groupBurdeningForm.Location = GetNextChildWindowLocation();
+            groupBurdeningForm.FormClosed += (s, args) => groupBurdeningForm = null;
+            groupBurdeningForm.Show(this);
+        }
+
+        private void buttonGroupBurdening_Click(object sender, EventArgs e)
+        {
+            if (groupBurdeningForm != null && !groupBurdeningForm.IsDisposed)
+            {
+                groupBurdeningForm.RefreshNodes(graphicElements.OfType<GraphicNode>());
+
+                if (!groupBurdeningForm.Visible)
+                {
+                    groupBurdeningForm.Show(this);
+                }
+                if (groupBurdeningForm.WindowState == FormWindowState.Minimized)
+                {
+                    groupBurdeningForm.WindowState = FormWindowState.Normal;
+                }
+                groupBurdeningForm.BringToFront();
+                groupBurdeningForm.Focus();
+                return;
+            }
+
+            groupBurdeningForm = new GroupBurdeningForm(graphicElements.OfType<GraphicNode>());
+            RegisterOpenedWindow(groupBurdeningForm);
+            groupBurdeningForm.StartPosition = FormStartPosition.Manual;
+            groupBurdeningForm.Location = GetNextChildWindowLocation();
+            groupBurdeningForm.FormClosed += (s, args) => groupBurdeningForm = null;
+            groupBurdeningForm.Show(this);
+        }
+
         private void buttonOpenReport_Click(object sender, EventArgs e)
         {
             if ((DateTime.UtcNow - lastCalcDoubleClickAt).TotalMilliseconds < 350)
