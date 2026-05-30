@@ -4507,6 +4507,7 @@ namespace PowerGridEditor
         private void ConfigureToolbarStyle()
         {
             panel1.Padding = new Padding(8);
+            panel1.Height = 132;
             panel1.BackColor = ThemePanelBackground;
             foreach (Control ctrl in panel1.Controls)
             {
@@ -4530,7 +4531,7 @@ namespace PowerGridEditor
         private void ArrangeMainToolbarButtons()
         {
             string[] topOrder = { "buttonAddNode", "buttonAddBaseNode", "buttonAddBranch", "buttonAddShunt", "buttonDelete", "buttonClearAll", "buttonExportData", "buttonImportData", "buttonOpenReport" };
-            string[] bottomOrder = { "buttonCalcSettings", "buttonOpenTelemetryForm", "buttonOpenClientSettingsForm", "buttonGroupBurdening" };
+            string[] bottomOrder = { "buttonCalcSettings", "buttonOpenTelemetryForm", "buttonOpenClientSettingsForm" };
 
             var topButtons = topOrder.Select(name => panel1.Controls.Find(name, false).FirstOrDefault()).OfType<Button>().ToList();
             int x = 12;
@@ -4544,13 +4545,15 @@ namespace PowerGridEditor
             int x2 = 12;
             foreach (var button in lowerButtons)
             {
-                if (button.Name == "buttonGroupBurdening")
-                {
-                    button.Width = 186;
-                }
-
                 button.Location = new Point(x2, 52);
                 x2 += button.Width + 8;
+            }
+
+            var groupBurdeningButton = panel1.Controls.Find("buttonGroupBurdening", false).FirstOrDefault() as Button;
+            if (groupBurdeningButton != null)
+            {
+                groupBurdeningButton.Size = new Size(186, 34);
+                groupBurdeningButton.Location = new Point(12, 92);
             }
         }
 

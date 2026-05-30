@@ -10,13 +10,19 @@ namespace PowerGridEditor
     public sealed class GroupBurdeningForm : Form
     {
         private readonly DataGridView nodesGrid;
+        private readonly TextBox textIntervalSeconds;
+        private readonly ComboBox comboStepType;
+        private readonly TextBox textStepValue;
+        private readonly Button buttonStart;
+        private readonly Button buttonStop;
+        private readonly Timer burdeningTimer;
 
         public GroupBurdeningForm(IEnumerable<GraphicNode> nodes)
         {
             Text = "Групповое утяжеление";
             StartPosition = FormStartPosition.CenterParent;
-            MinimumSize = new Size(640, 360);
-            Size = new Size(720, 460);
+            MinimumSize = new Size(760, 420);
+            Size = new Size(860, 520);
 
             nodesGrid = new DataGridView
             {
@@ -29,6 +35,13 @@ namespace PowerGridEditor
                 BorderStyle = BorderStyle.None,
                 RowHeadersVisible = false,
                 SelectionMode = DataGridViewSelectionMode.FullRowSelect
+            };
+            nodesGrid.CurrentCellDirtyStateChanged += (s, e) =>
+            {
+                if (nodesGrid.IsCurrentCellDirty)
+                {
+                    nodesGrid.CommitEdit(DataGridViewDataErrorContexts.Commit);
+                }
             };
 
             nodesGrid.Columns.Add(new DataGridViewCheckBoxColumn
@@ -65,7 +78,54 @@ namespace PowerGridEditor
                 FillWeight = 70
             });
 
+            var controlsPanel = new TableLayoutPanel
+            {
+                Dock = DockStyle.Bottom,
+                Height = 78,
+                Padding = new Padding(10, 8, 10, 8),
+                ColumnCount = 10,
+                RowCount = 2
+            };
+            controlsPanel.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+            controlsPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 95));
+            controlsPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 20));
+            controlsPanel.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+            controlsPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 95));
+            controlsPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 20));
+            controlsPanel.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+            controlsPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 110));
+            controlsPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 100));
+            controlsPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 100));
+            controlsPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+            controlsPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 1));
+
+            textIntervalSeconds = new TextBox { Dock = DockStyle.Fill, Text = "1" };
+            comboStepType = new ComboBox { Dock = DockStyle.Fill, DropDownStyle = ComboBoxStyle.DropDownList };
+            comboStepType.Items.AddRange(new object[] { "МВт", "%" });
+            comboStepType.SelectedIndex = 0;
+            textStepValue = new TextBox { Dock = DockStyle.Fill, Text = "1" };
+            buttonStart = new Button { Dock = DockStyle.Fill, Text = "Старт" };
+            buttonStop = new Button { Dock = DockStyle.Fill, Text = "Стоп", Enabled = false };
+
+            controlsPanel.Controls.Add(CreateControlLabel("Интервал (сек)"), 0, 0);
+            controlsPanel.Controls.Add(textIntervalSeconds, 1, 0);
+            controlsPanel.Controls.Add(CreateControlLabel("Тип шага"), 3, 0);
+            controlsPanel.Controls.Add(comboStepType, 4, 0);
+            controlsPanel.Controls.Add(CreateControlLabel("Величина шага"), 6, 0);
+            controlsPanel.Controls.Add(textStepValue, 7, 0);
+            controlsPanel.Controls.Add(buttonStart, 8, 0);
+            controlsPanel.Controls.Add(buttonStop, 9, 0);
+
+            buttonStart.Click += buttonStart_Click;
+            buttonStop.Click += (s, e) => StopBurdeningTimer();
+
+            burdeningTimer = new Timer();
+            burdeningTimer.Tick += (s, e) => ApplyBurdeningStep();
+
             Controls.Add(nodesGrid);
+            Controls.Add(controlsPanel);
+            FormClosing += (s, e) => StopBurdeningTimer();
+
             RefreshNodes(nodes);
         }
 
@@ -79,13 +139,119 @@ namespace PowerGridEditor
 
             foreach (var node in nodes.Where(IsPqNode).OrderBy(x => x.Data.Number))
             {
-                nodesGrid.Rows.Add(
+                int rowIndex = nodesGrid.Rows.Add(
                     false,
                     node.Data.Number.ToString(CultureInfo.InvariantCulture),
-                    node.Data.NominalActivePower.ToString("0.##", CultureInfo.InvariantCulture),
-                    node.Data.NominalReactivePower.ToString("0.##", CultureInfo.InvariantCulture),
+                    FormatLoadValue(node.Data.NominalActivePower),
+                    FormatLoadValue(node.Data.NominalReactivePower),
                     false);
+                nodesGrid.Rows[rowIndex].Tag = node;
             }
+        }
+
+        private static Label CreateControlLabel(string text)
+        {
+            return new Label
+            {
+                AutoSize = true,
+                Dock = DockStyle.Fill,
+                Text = text,
+                TextAlign = ContentAlignment.MiddleLeft
+            };
+        }
+
+        private void buttonStart_Click(object sender, EventArgs e)
+        {
+            nodesGrid.EndEdit();
+
+            if (!TryReadTimerSettings(out int intervalMilliseconds, out _))
+            {
+                return;
+            }
+
+            burdeningTimer.Interval = intervalMilliseconds;
+            burdeningTimer.Start();
+            buttonStart.Enabled = false;
+            buttonStop.Enabled = true;
+        }
+
+        private void StopBurdeningTimer()
+        {
+            burdeningTimer.Stop();
+            buttonStart.Enabled = true;
+            buttonStop.Enabled = false;
+        }
+
+        private void ApplyBurdeningStep()
+        {
+            nodesGrid.EndEdit();
+
+            if (!TryReadTimerSettings(out _, out double stepValue))
+            {
+                StopBurdeningTimer();
+                return;
+            }
+
+            bool usePercent = Convert.ToString(comboStepType.SelectedItem, CultureInfo.InvariantCulture) == "%";
+            foreach (DataGridViewRow row in nodesGrid.Rows)
+            {
+                if (!IsRowSelected(row) || !(row.Tag is GraphicNode node))
+                {
+                    continue;
+                }
+
+                double currentLoad = node.Data.NominalActivePower;
+                double newLoad = usePercent
+                    ? currentLoad + currentLoad * stepValue / 100.0
+                    : currentLoad + stepValue;
+
+                node.Data.NominalActivePower = newLoad;
+                row.Cells["LoadPColumn"].Value = FormatLoadValue(newLoad);
+            }
+        }
+
+        private bool TryReadTimerSettings(out int intervalMilliseconds, out double stepValue)
+        {
+            intervalMilliseconds = 0;
+            stepValue = 0.0;
+
+            if (!TryParsePositiveDouble(textIntervalSeconds.Text, out double intervalSeconds))
+            {
+                MessageBox.Show(this, "Введите положительное значение в поле \"Интервал (сек)\".", "Групповое утяжеление", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return false;
+            }
+
+            if (!TryParseDouble(textStepValue.Text, out stepValue))
+            {
+                MessageBox.Show(this, "Введите числовое значение в поле \"Величина шага\".", "Групповое утяжеление", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return false;
+            }
+
+            intervalMilliseconds = Math.Max(1, (int)Math.Round(intervalSeconds * 1000.0, MidpointRounding.AwayFromZero));
+            return true;
+        }
+
+        private static bool IsRowSelected(DataGridViewRow row)
+        {
+            return row != null
+                && row.Cells["SelectColumn"].Value is bool selected
+                && selected;
+        }
+
+        private static bool TryParsePositiveDouble(string text, out double value)
+        {
+            return TryParseDouble(text, out value) && value > 0.0;
+        }
+
+        private static bool TryParseDouble(string text, out double value)
+        {
+            return double.TryParse(text, NumberStyles.Float, CultureInfo.CurrentCulture, out value)
+                || double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out value);
+        }
+
+        private static string FormatLoadValue(double value)
+        {
+            return value.ToString("0.##", CultureInfo.InvariantCulture);
         }
 
         private static bool IsPqNode(GraphicNode node)

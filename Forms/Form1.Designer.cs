@@ -71,7 +71,7 @@
             this.panel1.Dock = System.Windows.Forms.DockStyle.Top;
             this.panel1.Location = new System.Drawing.Point(0, 0);
             this.panel1.Name = "panel1";
-            this.panel1.Size = new System.Drawing.Size(1500, 92);
+            this.panel1.Size = new System.Drawing.Size(1500, 132);
             this.panel1.TabIndex = 0;
             // 
             // labelTopClock
@@ -190,7 +190,7 @@
             //
             this.buttonGroupBurdening.FlatAppearance.BorderSize = 2;
             this.buttonGroupBurdening.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.buttonGroupBurdening.Location = new System.Drawing.Point(806, 48);
+            this.buttonGroupBurdening.Location = new System.Drawing.Point(12, 92);
             this.buttonGroupBurdening.Name = "buttonGroupBurdening";
             this.buttonGroupBurdening.Size = new System.Drawing.Size(186, 30);
             this.buttonGroupBurdening.TabIndex = 19;
@@ -298,9 +298,9 @@
             // 
             this.panel2.BackColor = System.Drawing.SystemColors.ControlLightLight;
             this.panel2.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.panel2.Location = new System.Drawing.Point(0, 92);
+            this.panel2.Location = new System.Drawing.Point(0, 132);
             this.panel2.Name = "panel2";
-            this.panel2.Size = new System.Drawing.Size(1500, 547);
+            this.panel2.Size = new System.Drawing.Size(1500, 507);
             this.panel2.TabIndex = 1;
             // 
             // statusStrip1
