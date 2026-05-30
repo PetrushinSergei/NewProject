@@ -83,7 +83,7 @@
     <Compile Include="Forms\Form1.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Forms\GroupBurdeningForm.cs">
+    <Compile Include="Forms\BurdeningForm.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="Forms\Form1.Designer.cs">

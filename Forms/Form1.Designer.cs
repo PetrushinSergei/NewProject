@@ -28,7 +28,7 @@
             this.textBoxStaticIp = new System.Windows.Forms.TextBox();
             this.comboBoxAdapters = new System.Windows.Forms.ComboBox();
             this.buttonImportData = new System.Windows.Forms.Button();
-            this.buttonGroupBurdening = new System.Windows.Forms.Button();
+            this.buttonBurdening = new System.Windows.Forms.Button();
             this.buttonOpenReport = new System.Windows.Forms.Button();
             this.buttonExportData = new System.Windows.Forms.Button();
             this.buttonClearAll = new System.Windows.Forms.Button();
@@ -59,7 +59,7 @@
             this.panel1.Controls.Add(this.textBoxStaticIp);
             this.panel1.Controls.Add(this.comboBoxAdapters);
             this.panel1.Controls.Add(this.buttonImportData);
-            this.panel1.Controls.Add(this.buttonGroupBurdening);
+            this.panel1.Controls.Add(this.buttonBurdening);
             this.panel1.Controls.Add(this.buttonOpenReport);
             this.panel1.Controls.Add(this.buttonExportData);
             this.panel1.Controls.Add(this.buttonClearAll);
@@ -186,17 +186,17 @@
             this.buttonImportData.UseVisualStyleBackColor = true;
             this.buttonImportData.Click += new System.EventHandler(this.buttonImportData_Click);
             //
-            // buttonGroupBurdening
+            // buttonBurdening
             //
-            this.buttonGroupBurdening.FlatAppearance.BorderSize = 2;
-            this.buttonGroupBurdening.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.buttonGroupBurdening.Location = new System.Drawing.Point(12, 92);
-            this.buttonGroupBurdening.Name = "buttonGroupBurdening";
-            this.buttonGroupBurdening.Size = new System.Drawing.Size(186, 30);
-            this.buttonGroupBurdening.TabIndex = 19;
-            this.buttonGroupBurdening.Text = "Утяжеление";
-            this.buttonGroupBurdening.UseVisualStyleBackColor = true;
-            this.buttonGroupBurdening.Click += new System.EventHandler(this.buttonOpenBurdening_Click);
+            this.buttonBurdening.FlatAppearance.BorderSize = 2;
+            this.buttonBurdening.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.buttonBurdening.Location = new System.Drawing.Point(12, 92);
+            this.buttonBurdening.Name = "buttonBurdening";
+            this.buttonBurdening.Size = new System.Drawing.Size(186, 30);
+            this.buttonBurdening.TabIndex = 19;
+            this.buttonBurdening.Text = "Утяжеление";
+            this.buttonBurdening.UseVisualStyleBackColor = true;
+            this.buttonBurdening.Click += new System.EventHandler(this.buttonBurdening_Click);
             // 
             // buttonOpenReport
             // 
@@ -353,7 +353,7 @@
         private System.Windows.Forms.Button buttonAddBaseNode;
         private System.Windows.Forms.Button buttonExportData;
         private System.Windows.Forms.Button buttonImportData;
-        private System.Windows.Forms.Button buttonGroupBurdening;
+        private System.Windows.Forms.Button buttonBurdening;
         private System.Windows.Forms.Button buttonOpenReport;
         private System.Windows.Forms.ComboBox comboBoxAdapters;
         private System.Windows.Forms.TextBox textBoxStaticIp;

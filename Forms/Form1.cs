@@ -43,7 +43,7 @@ namespace PowerGridEditor
         private Button buttonOpenClientSettingsForm;
         private TelemetryEditorForm telemetryEditorForm;
         private ClientSettingsForm clientSettingsForm;
-        private GroupBurdeningForm groupBurdeningForm;
+        private BurdeningForm burdeningForm;
         private Point rightMouseDownPoint;
         private bool rightMouseMoved;
         private bool hasConvergenceStatus;
@@ -3152,6 +3152,31 @@ namespace PowerGridEditor
             return new Point(x, y);
         }
 
+        private void buttonBurdening_Click(object sender, EventArgs e)
+        {
+            if (burdeningForm != null && !burdeningForm.IsDisposed)
+            {
+                if (!burdeningForm.Visible)
+                {
+                    burdeningForm.Show(this);
+                }
+                if (burdeningForm.WindowState == FormWindowState.Minimized)
+                {
+                    burdeningForm.WindowState = FormWindowState.Normal;
+                }
+                burdeningForm.BringToFront();
+                burdeningForm.Focus();
+                return;
+            }
+
+            burdeningForm = new BurdeningForm(graphicElements.OfType<GraphicNode>());
+            RegisterOpenedWindow(burdeningForm);
+            burdeningForm.StartPosition = FormStartPosition.Manual;
+            burdeningForm.Location = GetNextChildWindowLocation();
+            burdeningForm.FormClosed += (s, args) => burdeningForm = null;
+            burdeningForm.Show(this);
+        }
+
         private void buttonOpenBurdening_Click(object sender, EventArgs e)
         {
             if (groupBurdeningForm != null && !groupBurdeningForm.IsDisposed)
@@ -4599,11 +4624,11 @@ namespace PowerGridEditor
                 x2 += button.Width + 8;
             }
 
-            var groupBurdeningButton = panel1.Controls.Find("buttonGroupBurdening", false).FirstOrDefault() as Button;
-            if (groupBurdeningButton != null)
+            var burdeningButton = panel1.Controls.Find("buttonBurdening", false).FirstOrDefault() as Button;
+            if (burdeningButton != null)
             {
-                groupBurdeningButton.Size = new Size(186, 34);
-                groupBurdeningButton.Location = new Point(12, 92);
+                burdeningButton.Size = new Size(186, 34);
+                burdeningButton.Location = new Point(12, 92);
             }
         }
 
