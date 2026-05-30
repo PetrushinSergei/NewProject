@@ -43,6 +43,7 @@ namespace PowerGridEditor
         private Button buttonOpenClientSettingsForm;
         private TelemetryEditorForm telemetryEditorForm;
         private ClientSettingsForm clientSettingsForm;
+        private GroupBurdeningForm groupBurdeningForm;
         private Point rightMouseDownPoint;
         private bool rightMouseMoved;
         private bool hasConvergenceStatus;
@@ -3151,6 +3152,33 @@ namespace PowerGridEditor
             return new Point(x, y);
         }
 
+        private void buttonGroupBurdening_Click(object sender, EventArgs e)
+        {
+            if (groupBurdeningForm != null && !groupBurdeningForm.IsDisposed)
+            {
+                groupBurdeningForm.RefreshNodes(graphicElements.OfType<GraphicNode>());
+
+                if (!groupBurdeningForm.Visible)
+                {
+                    groupBurdeningForm.Show(this);
+                }
+                if (groupBurdeningForm.WindowState == FormWindowState.Minimized)
+                {
+                    groupBurdeningForm.WindowState = FormWindowState.Normal;
+                }
+                groupBurdeningForm.BringToFront();
+                groupBurdeningForm.Focus();
+                return;
+            }
+
+            groupBurdeningForm = new GroupBurdeningForm(graphicElements.OfType<GraphicNode>());
+            RegisterOpenedWindow(groupBurdeningForm);
+            groupBurdeningForm.StartPosition = FormStartPosition.Manual;
+            groupBurdeningForm.Location = GetNextChildWindowLocation();
+            groupBurdeningForm.FormClosed += (s, args) => groupBurdeningForm = null;
+            groupBurdeningForm.Show(this);
+        }
+
         private void buttonOpenReport_Click(object sender, EventArgs e)
         {
             if ((DateTime.UtcNow - lastCalcDoubleClickAt).TotalMilliseconds < 350)
@@ -4502,7 +4530,7 @@ namespace PowerGridEditor
         private void ArrangeMainToolbarButtons()
         {
             string[] topOrder = { "buttonAddNode", "buttonAddBaseNode", "buttonAddBranch", "buttonAddShunt", "buttonDelete", "buttonClearAll", "buttonExportData", "buttonImportData", "buttonOpenReport" };
-            string[] bottomOrder = { "buttonCalcSettings", "buttonOpenTelemetryForm", "buttonOpenClientSettingsForm" };
+            string[] bottomOrder = { "buttonCalcSettings", "buttonOpenTelemetryForm", "buttonOpenClientSettingsForm", "buttonGroupBurdening" };
 
             var topButtons = topOrder.Select(name => panel1.Controls.Find(name, false).FirstOrDefault()).OfType<Button>().ToList();
             int x = 12;
@@ -4516,6 +4544,11 @@ namespace PowerGridEditor
             int x2 = 12;
             foreach (var button in lowerButtons)
             {
+                if (button.Name == "buttonGroupBurdening")
+                {
+                    button.Width = 186;
+                }
+
                 button.Location = new Point(x2, 52);
                 x2 += button.Width + 8;
             }
