@@ -3156,6 +3156,31 @@ namespace PowerGridEditor
         {
             if (groupBurdeningForm != null && !groupBurdeningForm.IsDisposed)
             {
+                if (!groupBurdeningForm.Visible)
+                {
+                    groupBurdeningForm.Show(this);
+                }
+                if (groupBurdeningForm.WindowState == FormWindowState.Minimized)
+                {
+                    groupBurdeningForm.WindowState = FormWindowState.Normal;
+                }
+                groupBurdeningForm.BringToFront();
+                groupBurdeningForm.Focus();
+                return;
+            }
+
+            groupBurdeningForm = new GroupBurdeningForm(graphicElements.OfType<GraphicNode>());
+            RegisterOpenedWindow(groupBurdeningForm);
+            groupBurdeningForm.StartPosition = FormStartPosition.Manual;
+            groupBurdeningForm.Location = GetNextChildWindowLocation();
+            groupBurdeningForm.FormClosed += (s, args) => groupBurdeningForm = null;
+            groupBurdeningForm.Show(this);
+        }
+
+        private void buttonGroupBurdening_Click(object sender, EventArgs e)
+        {
+            if (groupBurdeningForm != null && !groupBurdeningForm.IsDisposed)
+            {
                 groupBurdeningForm.RefreshNodes(graphicElements.OfType<GraphicNode>());
 
                 if (!groupBurdeningForm.Visible)

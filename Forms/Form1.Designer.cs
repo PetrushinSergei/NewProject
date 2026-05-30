@@ -194,7 +194,7 @@
             this.buttonGroupBurdening.Name = "buttonGroupBurdening";
             this.buttonGroupBurdening.Size = new System.Drawing.Size(186, 30);
             this.buttonGroupBurdening.TabIndex = 19;
-            this.buttonGroupBurdening.Text = "Групповое утяжеление";
+            this.buttonGroupBurdening.Text = "Утяжеление";
             this.buttonGroupBurdening.UseVisualStyleBackColor = true;
             this.buttonGroupBurdening.Click += new System.EventHandler(this.buttonGroupBurdening_Click);
             // 
