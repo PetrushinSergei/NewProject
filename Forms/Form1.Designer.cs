@@ -196,7 +196,7 @@
             this.buttonGroupBurdening.TabIndex = 19;
             this.buttonGroupBurdening.Text = "Утяжеление";
             this.buttonGroupBurdening.UseVisualStyleBackColor = true;
-            this.buttonGroupBurdening.Click += new System.EventHandler(this.buttonGroupBurdening_Click);
+            this.buttonGroupBurdening.Click += new System.EventHandler(this.buttonOpenBurdening_Click);
             // 
             // buttonOpenReport
             // 
