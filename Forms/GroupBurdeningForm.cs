@@ -4,11 +4,15 @@ using System.Drawing;
 using System.Globalization;
 using System.Linq;
 using System.Windows.Forms;
+using System.Windows.Forms.VisualStyles;
 
 namespace PowerGridEditor
 {
     public sealed class GroupBurdeningForm : Form
     {
+        private const string SelectColumnName = "SelectColumn";
+        private const string TgColumnName = "TgColumn";
+
         private readonly DataGridView nodesGrid;
         private readonly TextBox textIntervalSeconds;
         private readonly ComboBox comboStepType;
@@ -16,6 +20,9 @@ namespace PowerGridEditor
         private readonly Button buttonStart;
         private readonly Button buttonStop;
         private readonly Timer burdeningTimer;
+        private bool selectAllChecked;
+        private bool tgAllChecked;
+        private bool updatingCheckBoxes;
 
         public GroupBurdeningForm(IEnumerable<GraphicNode> nodes)
         {
@@ -43,10 +50,13 @@ namespace PowerGridEditor
                     nodesGrid.CommitEdit(DataGridViewDataErrorContexts.Commit);
                 }
             };
+            nodesGrid.CellPainting += NodesGrid_CellPainting;
+            nodesGrid.ColumnHeaderMouseClick += NodesGrid_ColumnHeaderMouseClick;
+            nodesGrid.CellValueChanged += NodesGrid_CellValueChanged;
 
             nodesGrid.Columns.Add(new DataGridViewCheckBoxColumn
             {
-                Name = "SelectColumn",
+                Name = SelectColumnName,
                 HeaderText = "Выбор",
                 FillWeight = 70
             });
@@ -73,7 +83,7 @@ namespace PowerGridEditor
             });
             nodesGrid.Columns.Add(new DataGridViewCheckBoxColumn
             {
-                Name = "TgColumn",
+                Name = TgColumnName,
                 HeaderText = "Tg",
                 FillWeight = 70
             });
@@ -134,6 +144,7 @@ namespace PowerGridEditor
             nodesGrid.Rows.Clear();
             if (nodes == null)
             {
+                UpdateHeaderCheckStates();
                 return;
             }
 
@@ -147,6 +158,138 @@ namespace PowerGridEditor
                     false);
                 nodesGrid.Rows[rowIndex].Tag = node;
             }
+
+            UpdateHeaderCheckStates();
+        }
+
+        private void NodesGrid_CellPainting(object sender, DataGridViewCellPaintingEventArgs e)
+        {
+            if (e.RowIndex != -1 || !IsSelectAllColumn(e.ColumnIndex))
+            {
+                return;
+            }
+
+            e.Paint(e.CellBounds, DataGridViewPaintParts.All & ~DataGridViewPaintParts.ContentForeground);
+
+            string columnName = nodesGrid.Columns[e.ColumnIndex].Name;
+            bool isChecked = GetHeaderCheckState(columnName);
+            CheckBoxState state = isChecked ? CheckBoxState.CheckedNormal : CheckBoxState.UncheckedNormal;
+            Size checkBoxSize = CheckBoxRenderer.GetGlyphSize(e.Graphics, state);
+            int checkBoxX = e.CellBounds.Left + 6;
+            int checkBoxY = e.CellBounds.Top + (e.CellBounds.Height - checkBoxSize.Height) / 2;
+            CheckBoxRenderer.DrawCheckBox(e.Graphics, new Point(checkBoxX, checkBoxY), state);
+
+            Rectangle textBounds = new Rectangle(
+                checkBoxX + checkBoxSize.Width + 4,
+                e.CellBounds.Top + 1,
+                e.CellBounds.Width - checkBoxSize.Width - 12,
+                e.CellBounds.Height - 2);
+            TextRenderer.DrawText(
+                e.Graphics,
+                Convert.ToString(e.FormattedValue, CultureInfo.CurrentCulture),
+                e.CellStyle.Font,
+                textBounds,
+                e.CellStyle.ForeColor,
+                TextFormatFlags.VerticalCenter | TextFormatFlags.Left | TextFormatFlags.EndEllipsis);
+
+            e.Handled = true;
+        }
+
+        private void NodesGrid_ColumnHeaderMouseClick(object sender, DataGridViewCellMouseEventArgs e)
+        {
+            if (!IsSelectAllColumn(e.ColumnIndex))
+            {
+                return;
+            }
+
+            string columnName = nodesGrid.Columns[e.ColumnIndex].Name;
+            SetColumnCheckState(columnName, !GetHeaderCheckState(columnName));
+        }
+
+        private void NodesGrid_CellValueChanged(object sender, DataGridViewCellEventArgs e)
+        {
+            if (updatingCheckBoxes || e.RowIndex < 0 || !IsSelectAllColumn(e.ColumnIndex))
+            {
+                return;
+            }
+
+            UpdateHeaderCheckState(nodesGrid.Columns[e.ColumnIndex].Name);
+        }
+
+        private bool IsSelectAllColumn(int columnIndex)
+        {
+            if (columnIndex < 0 || columnIndex >= nodesGrid.Columns.Count)
+            {
+                return false;
+            }
+
+            string columnName = nodesGrid.Columns[columnIndex].Name;
+            return columnName == SelectColumnName || columnName == TgColumnName;
+        }
+
+        private bool GetHeaderCheckState(string columnName)
+        {
+            return columnName == SelectColumnName ? selectAllChecked : tgAllChecked;
+        }
+
+        private void SetHeaderCheckState(string columnName, bool isChecked)
+        {
+            if (columnName == SelectColumnName)
+            {
+                selectAllChecked = isChecked;
+            }
+            else if (columnName == TgColumnName)
+            {
+                tgAllChecked = isChecked;
+            }
+
+            nodesGrid.InvalidateCell(nodesGrid.Columns[columnName].HeaderCell);
+        }
+
+        private void SetColumnCheckState(string columnName, bool isChecked)
+        {
+            nodesGrid.EndEdit();
+
+            updatingCheckBoxes = true;
+            try
+            {
+                foreach (DataGridViewRow row in nodesGrid.Rows)
+                {
+                    if (!row.IsNewRow)
+                    {
+                        row.Cells[columnName].Value = isChecked;
+                    }
+                }
+            }
+            finally
+            {
+                updatingCheckBoxes = false;
+            }
+
+            SetHeaderCheckState(columnName, HasRows() && AreAllRowsChecked(columnName));
+        }
+
+        private void UpdateHeaderCheckStates()
+        {
+            UpdateHeaderCheckState(SelectColumnName);
+            UpdateHeaderCheckState(TgColumnName);
+        }
+
+        private void UpdateHeaderCheckState(string columnName)
+        {
+            SetHeaderCheckState(columnName, HasRows() && AreAllRowsChecked(columnName));
+        }
+
+        private bool HasRows()
+        {
+            return nodesGrid.Rows.Cast<DataGridViewRow>().Any(row => !row.IsNewRow);
+        }
+
+        private bool AreAllRowsChecked(string columnName)
+        {
+            return nodesGrid.Rows.Cast<DataGridViewRow>()
+                .Where(row => !row.IsNewRow)
+                .All(row => row.Cells[columnName].Value is bool selected && selected);
         }
 
         private static Label CreateControlLabel(string text)
@@ -234,7 +377,7 @@ namespace PowerGridEditor
         private static bool IsRowSelected(DataGridViewRow row)
         {
             return row != null
-                && row.Cells["SelectColumn"].Value is bool selected
+                && row.Cells[SelectColumnName].Value is bool selected
                 && selected;
         }
 
