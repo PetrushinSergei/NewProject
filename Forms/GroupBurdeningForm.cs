@@ -39,6 +39,13 @@ namespace PowerGridEditor
             settingsTabPage = new TabPage("Настройка");
             resultsTabPage = new TabPage("Протокол расчета");
 
+            tabControl = new TabControl
+            {
+                Dock = DockStyle.Fill
+            };
+            settingsTabPage = new TabPage("Настройка");
+            resultsTabPage = new TabPage("Протокол расчета");
+
             nodesGrid = new DataGridView
             {
                 Dock = DockStyle.Fill,
