@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "D:\\НГТУ\\Диплом\\MAIN CODE\\Новый функционал\\PowerGridEditor.csproj": {}
+    "D:\\НГТУ\\Диплом\\MAIN CODE\\NewProject-master\\PowerGridEditor.csproj": {}
   },
   "projects": {
-    "D:\\НГТУ\\Диплом\\MAIN CODE\\Новый функционал\\PowerGridEditor.csproj": {
+    "D:\\НГТУ\\Диплом\\MAIN CODE\\NewProject-master\\PowerGridEditor.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\НГТУ\\Диплом\\MAIN CODE\\Новый функционал\\PowerGridEditor.csproj",
+        "projectUniqueName": "D:\\НГТУ\\Диплом\\MAIN CODE\\NewProject-master\\PowerGridEditor.csproj",
         "projectName": "PowerGridEditor",
-        "projectPath": "D:\\НГТУ\\Диплом\\MAIN CODE\\Новый функционал\\PowerGridEditor.csproj",
+        "projectPath": "D:\\НГТУ\\Диплом\\MAIN CODE\\NewProject-master\\PowerGridEditor.csproj",
         "packagesPath": "C:\\Users\\Петрушин Сергей\\.nuget\\packages\\",
-        "outputPath": "D:\\НГТУ\\Диплом\\MAIN CODE\\Новый функционал\\obj\\",
+        "outputPath": "D:\\НГТУ\\Диплом\\MAIN CODE\\NewProject-master\\obj\\",
         "projectStyle": "PackageReference",
         "skipContentFileWrite": true,
         "UsingMicrosoftNETSdk": false,
