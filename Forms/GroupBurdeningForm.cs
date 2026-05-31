@@ -173,7 +173,9 @@ namespace PowerGridEditor
 
             string columnName = nodesGrid.Columns[e.ColumnIndex].Name;
             bool isChecked = GetHeaderCheckState(columnName);
-            CheckBoxState state = isChecked ? CheckBoxState.CheckedNormal : CheckBoxState.UncheckedNormal;
+            System.Windows.Forms.VisualStyles.CheckBoxState state = isChecked
+                ? System.Windows.Forms.VisualStyles.CheckBoxState.CheckedNormal
+                : System.Windows.Forms.VisualStyles.CheckBoxState.UncheckedNormal;
             Size checkBoxSize = CheckBoxRenderer.GetGlyphSize(e.Graphics, state);
             int checkBoxX = e.CellBounds.Left + 6;
             int checkBoxY = e.CellBounds.Top + (e.CellBounds.Height - checkBoxSize.Height) / 2;
