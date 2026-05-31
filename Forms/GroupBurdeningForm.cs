@@ -214,7 +214,7 @@ namespace PowerGridEditor
             tabControl.SelectedTab = resultsTabPage;
         }
 
-        private void StopBurdeningTimer()
+        public void StopBurdeningTimer()
         {
             burdeningTimer.Stop();
             buttonStart.Enabled = true;
