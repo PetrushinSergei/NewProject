@@ -3521,8 +3521,19 @@ namespace PowerGridEditor
             isCalculationRunning = false;
             calculationTimer?.Stop();
             ParameterAutoChangeService.StopAll();
+            StopGroupBurdeningTimer();
             UpdateCalculationButtonUi();
             UpdateSnapshotNavigationButtons();
+        }
+
+        private void StopGroupBurdeningTimer()
+        {
+            if (groupBurdeningForm == null || groupBurdeningForm.IsDisposed)
+            {
+                return;
+            }
+
+            groupBurdeningForm.StopBurdeningTimer();
         }
 
         private void UpdateCalculationButtonUi()

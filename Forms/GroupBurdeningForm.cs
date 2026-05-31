@@ -9,20 +9,35 @@ namespace PowerGridEditor
 {
     public sealed class GroupBurdeningForm : Form
     {
+        private const string DialogTitle = "Групповое утяжеление";
+
+        private readonly TabControl tabControl;
+        private readonly TabPage settingsTabPage;
+        private readonly TabPage resultsTabPage;
         private readonly DataGridView nodesGrid;
+        private readonly DataGridView resultsGrid;
         private readonly TextBox textIntervalSeconds;
         private readonly ComboBox comboStepType;
         private readonly TextBox textStepValue;
         private readonly Button buttonStart;
         private readonly Button buttonStop;
         private readonly Timer burdeningTimer;
+        private readonly List<GroupBurdeningNodeState> selectedNodeStates = new List<GroupBurdeningNodeState>();
+        private int burdeningStepNumber;
 
         public GroupBurdeningForm(IEnumerable<GraphicNode> nodes)
         {
-            Text = "Групповое утяжеление";
+            Text = DialogTitle;
             StartPosition = FormStartPosition.CenterParent;
             MinimumSize = new Size(760, 420);
             Size = new Size(860, 520);
+
+            tabControl = new TabControl
+            {
+                Dock = DockStyle.Fill
+            };
+            settingsTabPage = new TabPage("Настройка");
+            resultsTabPage = new TabPage("Протокол расчета");
 
             nodesGrid = new DataGridView
             {
@@ -78,6 +93,20 @@ namespace PowerGridEditor
                 FillWeight = 70
             });
 
+            resultsGrid = new DataGridView
+            {
+                Dock = DockStyle.Fill,
+                AllowUserToAddRows = false,
+                AllowUserToDeleteRows = false,
+                AllowUserToResizeRows = false,
+                AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.AllCells,
+                BackgroundColor = SystemColors.Window,
+                BorderStyle = BorderStyle.None,
+                ReadOnly = true,
+                RowHeadersVisible = false,
+                SelectionMode = DataGridViewSelectionMode.FullRowSelect
+            };
+
             var controlsPanel = new TableLayoutPanel
             {
                 Dock = DockStyle.Bottom,
@@ -122,8 +151,12 @@ namespace PowerGridEditor
             burdeningTimer = new Timer();
             burdeningTimer.Tick += (s, e) => ApplyBurdeningStep();
 
-            Controls.Add(nodesGrid);
-            Controls.Add(controlsPanel);
+            settingsTabPage.Controls.Add(nodesGrid);
+            settingsTabPage.Controls.Add(controlsPanel);
+            resultsTabPage.Controls.Add(resultsGrid);
+            tabControl.TabPages.Add(settingsTabPage);
+            tabControl.TabPages.Add(resultsTabPage);
+            Controls.Add(tabControl);
             FormClosing += (s, e) => StopBurdeningTimer();
 
             RefreshNodes(nodes);
@@ -169,17 +202,71 @@ namespace PowerGridEditor
                 return;
             }
 
+            if (!PrepareResultsProtocol())
+            {
+                return;
+            }
+
             burdeningTimer.Interval = intervalMilliseconds;
             burdeningTimer.Start();
             buttonStart.Enabled = false;
             buttonStop.Enabled = true;
+            tabControl.SelectedTab = resultsTabPage;
         }
 
-        private void StopBurdeningTimer()
+        public void StopBurdeningTimer()
         {
             burdeningTimer.Stop();
             buttonStart.Enabled = true;
             buttonStop.Enabled = false;
+        }
+
+        private bool PrepareResultsProtocol()
+        {
+            selectedNodeStates.Clear();
+            burdeningStepNumber = 0;
+
+            foreach (DataGridViewRow row in nodesGrid.Rows)
+            {
+                if (!IsRowSelected(row) || !(row.Tag is GraphicNode node))
+                {
+                    continue;
+                }
+
+                selectedNodeStates.Add(new GroupBurdeningNodeState(row, node, IsTgEnabled(row)));
+            }
+
+            if (selectedNodeStates.Count == 0)
+            {
+                MessageBox.Show(this, "Выберите хотя бы один узел для группового утяжеления.", DialogTitle, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return false;
+            }
+
+            resultsGrid.Columns.Clear();
+            resultsGrid.Rows.Clear();
+            resultsGrid.Columns.Add(CreateReadOnlyTextColumn("StepNumberColumn", "Номер"));
+            resultsGrid.Columns.Add(CreateReadOnlyTextColumn("BurdeningStepColumn", "Шаг"));
+
+            foreach (var state in selectedNodeStates)
+            {
+                string nodeNumber = state.Node.Data.Number.ToString(CultureInfo.InvariantCulture);
+                resultsGrid.Columns.Add(CreateReadOnlyTextColumn($"LoadP_{nodeNumber}", $"Pн_{nodeNumber}"));
+                resultsGrid.Columns.Add(CreateReadOnlyTextColumn($"LoadQ_{nodeNumber}", $"Qн_{nodeNumber}"));
+            }
+
+            AddResultsProtocolRow(0.0);
+            return true;
+        }
+
+        private static DataGridViewTextBoxColumn CreateReadOnlyTextColumn(string name, string headerText)
+        {
+            return new DataGridViewTextBoxColumn
+            {
+                Name = name,
+                HeaderText = headerText,
+                ReadOnly = true,
+                SortMode = DataGridViewColumnSortMode.NotSortable
+            };
         }
 
         private void ApplyBurdeningStep()
@@ -192,22 +279,52 @@ namespace PowerGridEditor
                 return;
             }
 
-            bool usePercent = Convert.ToString(comboStepType.SelectedItem, CultureInfo.InvariantCulture) == "%";
-            foreach (DataGridViewRow row in nodesGrid.Rows)
+            if (selectedNodeStates.Count == 0)
             {
-                if (!IsRowSelected(row) || !(row.Tag is GraphicNode node))
-                {
-                    continue;
-                }
+                StopBurdeningTimer();
+                return;
+            }
 
+            bool usePercent = Convert.ToString(comboStepType.SelectedItem, CultureInfo.InvariantCulture) == "%";
+            foreach (var state in selectedNodeStates)
+            {
+                var node = state.Node;
                 double currentLoad = node.Data.NominalActivePower;
                 double newLoad = usePercent
                     ? currentLoad + currentLoad * stepValue / 100.0
                     : currentLoad + stepValue;
 
                 node.Data.NominalActivePower = newLoad;
-                row.Cells["LoadPColumn"].Value = FormatLoadValue(newLoad);
+                state.Row.Cells["LoadPColumn"].Value = FormatLoadValue(newLoad);
+
+                if (state.UseTg && Math.Abs(state.InitialP) > 1e-9)
+                {
+                    double newReactiveLoad = newLoad * (state.InitialQ / state.InitialP);
+                    node.Data.NominalReactivePower = newReactiveLoad;
+                }
+
+                state.Row.Cells["LoadQColumn"].Value = FormatLoadValue(node.Data.NominalReactivePower);
             }
+
+            burdeningStepNumber++;
+            AddResultsProtocolRow(stepValue * burdeningStepNumber);
+        }
+
+        private void AddResultsProtocolRow(double burdeningStepValue)
+        {
+            var rowValues = new List<object>
+            {
+                burdeningStepNumber.ToString(CultureInfo.InvariantCulture),
+                FormatLoadValue(burdeningStepValue)
+            };
+
+            foreach (var state in selectedNodeStates)
+            {
+                rowValues.Add(FormatLoadValue(state.Node.Data.NominalActivePower));
+                rowValues.Add(FormatLoadValue(state.Node.Data.NominalReactivePower));
+            }
+
+            resultsGrid.Rows.Add(rowValues.ToArray());
         }
 
         private bool TryReadTimerSettings(out int intervalMilliseconds, out double stepValue)
@@ -217,13 +334,13 @@ namespace PowerGridEditor
 
             if (!TryParsePositiveDouble(textIntervalSeconds.Text, out double intervalSeconds))
             {
-                MessageBox.Show(this, "Введите положительное значение в поле \"Интервал (сек)\".", "Групповое утяжеление", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show(this, "Введите положительное значение в поле \"Интервал (сек)\".", DialogTitle, MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return false;
             }
 
             if (!TryParseDouble(textStepValue.Text, out stepValue))
             {
-                MessageBox.Show(this, "Введите числовое значение в поле \"Величина шага\".", "Групповое утяжеление", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show(this, "Введите числовое значение в поле \"Величина шага\".", DialogTitle, MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return false;
             }
 
@@ -235,6 +352,13 @@ namespace PowerGridEditor
         {
             return row != null
                 && row.Cells["SelectColumn"].Value is bool selected
+                && selected;
+        }
+
+        private static bool IsTgEnabled(DataGridViewRow row)
+        {
+            return row != null
+                && row.Cells["TgColumn"].Value is bool selected
                 && selected;
         }
 
@@ -259,6 +383,24 @@ namespace PowerGridEditor
             return node != null
                 && node.Data != null
                 && Math.Abs(node.Data.FixedVoltageModule) < 1e-9;
+        }
+
+        private sealed class GroupBurdeningNodeState
+        {
+            public GroupBurdeningNodeState(DataGridViewRow row, GraphicNode node, bool useTg)
+            {
+                Row = row;
+                Node = node;
+                UseTg = useTg;
+                InitialP = node.Data.NominalActivePower;
+                InitialQ = node.Data.NominalReactivePower;
+            }
+
+            public DataGridViewRow Row { get; }
+            public GraphicNode Node { get; }
+            public bool UseTg { get; }
+            public double InitialP { get; }
+            public double InitialQ { get; }
         }
     }
 }
